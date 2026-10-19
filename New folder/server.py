@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """
 Kick Chat Panel — Railway Edition
 INSTALL:  pip install -r requirements.txt
@@ -107,11 +107,11 @@ def parse_proxy_string(proxy: str):
     return d
 
 def make_session(token: str = None, channel: str = "", proxy: str = None) -> tls_client.Session:
-    session = tls_client.Session(client_identifier="chrome127", random_tls_extension_order=True)
+    session = tls_client.Session(client_identifier="chrome_120", random_tls_extension_order=True)
     headers = {
         "accept": "application/json",
         "accept-language": "en-US,en;q=0.9",
-        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
         "referer": f"https://kick.com/{channel}" if channel else "https://kick.com/",
         "origin": "https://kick.com",
     }
@@ -320,7 +320,7 @@ async def ai_generate(req: AIGenerateRequest):
         elif provider in ("chatgpt", "deepseek"):
             url = "https://api.openai.com/v1/chat/completions" if provider == "chatgpt" else "https://api.deepseek.com/v1/chat/completions"
             model_name = "gpt-3.5-turbo" if provider == "chatgpt" else "deepseek"
-            s = tls_client.Session(client_identifier="chrome127", random_tls_extension_order=True)
+            s = tls_client.Session(client_identifier="chrome_120", random_tls_extension_order=True)
             s.headers.update({"Authorization": f"Bearer {req.api_key}", "Content-Type": "application/json"})
             r = s.post(url, json={"model": model_name, "messages": [{"role": "system", "content": system_prompt}], "max_tokens": 300, "temperature": 0.8}, timeout_seconds=20)
             if r.status_code != 200: return {"ok": False, "error": f"{provider} error {r.status_code}: {r.text[:200]}"}
@@ -328,7 +328,7 @@ async def ai_generate(req: AIGenerateRequest):
         elif provider == "lmstudio":
             url = (req.api_key or "http://127.0.0.1:11434").strip()
             if not url.startswith("http"): url = "http://" + url
-            s = tls_client.Session(client_identifier="chrome127", random_tls_extension_order=True)
+            s = tls_client.Session(client_identifier="chrome_120", random_tls_extension_order=True)
             s.headers.update({"Content-Type": "application/json"})
             r = s.post(f"{url}/v1/chat/completions", json={"model": req.model or "local", "messages": [{"role": "user", "content": system_prompt}], "max_tokens": 300, "temperature": 0.8}, timeout_seconds=120)
             if r.status_code != 200: return {"ok": False, "error": f"LM Studio error {r.status_code}: {r.text[:200]}"}
@@ -391,3 +391,4 @@ if __name__ == "__main__":
     print(f"\n  Kick Chat Panel — Railway Edition")
     print(f"  Running on port {port}\n")
     uvicorn.run("server:app", host="0.0.0.0", port=port, reload=False)
+
