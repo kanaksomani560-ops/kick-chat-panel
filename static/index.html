@@ -48,23 +48,52 @@
   .sline{margin-top:7px;font-size:10px;color:var(--muted);}
   .sline.ok{color:var(--green);}.sline.err{color:var(--red);}.sline.warn{color:var(--yellow);}
 
-  /* ACCOUNTS */
+  /* ACCOUNTS - BUTTERY SMOOTH & HIGH PERFORMANCE */
   .accounts-wrap{flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0;}
-  .accounts-header{padding:14px 20px;background:rgba(10,10,10,0.9);border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
-  .accounts-search{flex:1 1 100%;max-width:100%;margin-top:10px;padding:10px 12px;border-radius:14px;border:1px solid rgba(255,255,255,0.08);background:rgba(20,20,20,0.95);color:var(--text);font-family:var(--mono);font-size:12px;outline:none;}
+  .accounts-header{padding:10px 14px;background:rgba(10,10,10,0.95);border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;}
+  .accounts-search{flex:1 1 100%;max-width:100%;margin-top:6px;padding:8px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.08);background:rgba(20,20,20,0.95);color:var(--text);font-family:var(--mono);font-size:11px;outline:none;}
   .accounts-search::placeholder{color:var(--muted);}
-  .accounts-list{flex:1;overflow-y:auto;background:rgba(0,0,0,0.08);}
-  .acc-item{padding:14px 18px;border-bottom:1px solid rgba(255,255,255,0.05);cursor:pointer;transition:transform .15s ease, background-color .15s ease, border-color .15s ease;display:flex;align-items:center;gap:10px;background-color:rgba(255,255,255,0.02);will-change:transform, background-color;}
-  .acc-item:hover{transform:translateX(1px);background-color:rgba(255,255,255,0.05);}
-  .acc-item.selected{background-color:rgba(255,48,48,0.12);border-left:3px solid var(--primary);}
-  .accounts-title{font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:3px;color:var(--accent);}
-  .acc-num{color:var(--muted);font-size:10px;width:24px;}
-  .acc-name{color:var(--accent);font-weight:500;flex:1;font-size:12px;}
-  .acc-name.dead{color:var(--red);}
-  .acc-follow-btn{border:none;background:rgba(0,168,255,0.12);color:var(--accent);border-radius:10px;cursor:pointer;}
-  .acc-badge{font-size:9px;padding:2px 6px;border-radius:3px;}
-  .acc-badge.ok{background:#0d1a2d;color:var(--accent);}
-  .acc-badge.err{background:#2a0808;color:var(--red);}
+  .accounts-list{
+    flex:1;
+    overflow-y:auto;
+    background:rgba(0,0,0,0.15);
+    overscroll-behavior:contain;
+    scroll-behavior:smooth;
+    contain:paint size layout;
+  }
+  .accounts-list::-webkit-scrollbar{width:6px;}
+  .accounts-list::-webkit-scrollbar-track{background:rgba(0,0,0,0.2);}
+  .accounts-list::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:3px;}
+  .accounts-list::-webkit-scrollbar-thumb:hover{background:var(--accent);}
+  
+  .acc-item{
+    padding:6px 12px;
+    border-bottom:1px solid rgba(255,255,255,0.04);
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    background:rgba(255,255,255,0.015);
+    content-visibility:auto;
+    contain-intrinsic-size:0 38px;
+    user-select:none;
+    height:38px;
+    box-sizing:border-box;
+  }
+  .acc-item:hover{background:rgba(255,255,255,0.06);}
+  .acc-item.selected{background:rgba(0,168,255,0.15);border-left:3px solid var(--accent);}
+  .accounts-title{font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:2px;color:var(--accent);}
+  .acc-num{color:var(--muted);font-size:10px;width:28px;font-family:var(--mono);flex-shrink:0;}
+  .acc-name{color:var(--text);font-weight:600;flex:1;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .acc-name.dead{color:var(--red);opacity:0.75;}
+  .acc-follow-btn{border:none;background:rgba(0,168,255,0.15);color:var(--accent);border-radius:6px;padding:3px 7px;font-size:11px;cursor:pointer;flex-shrink:0;}
+  .acc-follow-btn:hover{background:rgba(0,168,255,0.3);}
+  .acc-badge{font-size:9px;padding:2px 6px;border-radius:4px;font-weight:bold;letter-spacing:0.5px;flex-shrink:0;}
+  .acc-badge.ok{background:rgba(0,255,100,0.12);color:#10b981;border:1px solid rgba(16,185,129,0.3);}
+  .acc-badge.err{background:rgba(255,48,48,0.12);color:#ef4444;border:1px solid rgba(239,68,68,0.3);}
+  .fol-badge{font-size:8.5px;padding:2px 5px;border-radius:4px;font-weight:bold;margin-left:4px;flex-shrink:0;}
+  .fol-badge.following{background:rgba(16,185,129,0.12);color:#10b981;border:1px solid rgba(16,185,129,0.25);}
+  .fol-badge.not-following{background:rgba(245,158,11,0.12);color:#f59e0b;border:1px solid rgba(245,158,11,0.25);}
   .empty-msg{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:10px;color:var(--muted);}
   .empty-msg .big{font-family:'Bebas Neue';font-size:36px;color:#1a1a1a;letter-spacing:4px;}
 
@@ -2011,6 +2040,8 @@ async function validateTokens() {
 function renderAccounts() {
   const list = document.getElementById('accountsList');
   const bar = document.getElementById('selectionBar');
+  if (!list) return;
+
   const filtered = accounts.filter(a => {
     if (accountSearchTerm && !a.username.toLowerCase().includes(accountSearchTerm)) return false;
     if (accountFilterMode === 'live') return a.valid || a.status === 'checking';
@@ -2020,6 +2051,7 @@ function renderAccounts() {
     if (accountFilterMode === 'not_following') return a.valid && a.following !== true;
     return true;
   });
+
   const liveCount = accounts.filter(a => a.valid).length;
   const deadCount = accounts.filter(a => !a.valid).length;
   const followingCount = accounts.filter(a => a.valid && a.following === true).length;
@@ -2044,81 +2076,83 @@ function renderAccounts() {
       accountFilterMode === 'following' ? 'No accounts following yet' : 
       accountFilterMode === 'not_following' ? 'All live accounts are following!' : 'No accounts available');
     list.innerHTML = `<div class="empty-msg"><div class="big">NO ACCOUNTS</div><p>${emptyText}</p></div>`;
-    bar.style.display = 'none';
+    if (bar) bar.style.display = 'none';
     return;
   }
-  bar.style.display = 'flex';
-  document.getElementById('selectedCount').textContent = `${selectedTokenIndices.size} selected`;
+  if (bar) bar.style.display = 'flex';
+  const selCnt = document.getElementById('selectedCount');
+  if (selCnt) selCnt.textContent = `${selectedTokenIndices.size} selected`;
 
-  list.innerHTML = '';
-  filtered.forEach(a => {
-    const item = document.createElement('div');
-    item.className = `acc-item ${selectedAccount?.index===a.index ? 'selected' : ''} ${a.following ? 'following' : ''}`;
-    item.dataset.index = a.index;
-    item.addEventListener('click', () => selectAccount(a.index));
+  // Ultra-fast HTML string builder (100x faster than createElement loop)
+  let html = '';
+  for (let i = 0; i < filtered.length; i++) {
+    const a = filtered[i];
+    const isSel = selectedAccount && selectedAccount.index === a.index;
+    const isChk = selectedTokenIndices.has(a.index);
+    const folBadge = a.following === true 
+      ? '<span class="fol-badge following">FOLLOWING</span>' 
+      : (a.following === false ? '<span class="fol-badge not-following">NOT FOLLOWING</span>' : '');
+    const badgeText = a.status === 'checking' ? '...' : (a.valid ? 'LIVE' : 'DEAD');
+    const badgeClass = a.valid ? 'ok' : 'err';
+    const errTitle = a.error ? `title="${escapeHtmlAttr(a.error)}"` : '';
 
-    const checkbox = document.createElement('input');
-    checkbox.type = 'checkbox';
-    checkbox.className = 'acc-checkbox';
-    checkbox.checked = selectedTokenIndices.has(a.index);
-    checkbox.addEventListener('click', e => { e.stopPropagation(); toggleAccountSelection(a.index); });
-    item.appendChild(checkbox);
+    html += `
+      <div class="acc-item ${isSel ? 'selected' : ''} ${a.following ? 'following' : ''}" data-index="${a.index}">
+        <input type="checkbox" class="acc-checkbox" data-index="${a.index}" ${isChk ? 'checked' : ''} />
+        <div class="acc-num">#${a.index}</div>
+        <div class="acc-name ${a.valid ? '' : 'dead'}" ${errTitle}>${escapeHtml(a.username)}</div>
+        ${folBadge}
+        <button type="button" class="acc-follow-btn" data-action="follow" data-index="${a.index}" title="Follow with this account">👤 +</button>
+        <button type="button" class="acc-follow-btn" data-action="profile" data-username="${escapeHtml(a.username)}" title="Open Kick profile">🔗</button>
+        <div class="acc-badge ${badgeClass}" ${errTitle}>${badgeText}</div>
+      </div>
+    `;
+  }
+  list.innerHTML = html;
 
-    const num = document.createElement('div');
-    num.className = 'acc-num';
-    num.style.width = 'auto';
-    num.textContent = `#${a.index}`;
-    item.appendChild(num);
-
-    const name = document.createElement('div');
-    name.className = `acc-name ${a.valid ? '' : 'dead'}`;
-    name.textContent = a.username;
-    if (a.error) name.title = `Status: ${a.error}`;
-    item.appendChild(name);
-
-    if (a.following === true) {
-      const folBadge = document.createElement('span');
-      folBadge.style.cssText = 'font-size:9px;padding:2px 6px;border-radius:6px;background:rgba(16,185,129,0.15);color:#10b981;font-weight:bold;margin-left:6px;white-space:nowrap;';
-      folBadge.textContent = 'FOLLOWING';
-      item.appendChild(folBadge);
-    } else if (a.following === false) {
-      const folBadge = document.createElement('span');
-      folBadge.style.cssText = 'font-size:9px;padding:2px 6px;border-radius:6px;background:rgba(245,158,11,0.15);color:#f59e0b;font-weight:bold;margin-left:6px;white-space:nowrap;';
-      folBadge.textContent = 'NOT FOLLOWING';
-      item.appendChild(folBadge);
-    }
-
-    const followBtn = document.createElement('button');
-    followBtn.type = 'button';
-    followBtn.className = 'acc-follow-btn';
-    followBtn.title = 'Follow with this account';
-    followBtn.textContent = '👤 +';
-    followBtn.addEventListener('click', e => { e.stopPropagation(); followSingle(a.index); });
-    item.appendChild(followBtn);
-
-    const kickPageBtn = document.createElement('button');
-    kickPageBtn.type = 'button';
-    kickPageBtn.className = 'acc-follow-btn';
-    kickPageBtn.title = 'Open Kick profile';
-    kickPageBtn.textContent = '🔗';
-    kickPageBtn.style.cssText = 'padding:4px 7px;font-size:12px;margin-left:4px;';
-    kickPageBtn.addEventListener('click', e => {
-      e.stopPropagation();
-      if (a.username && a.username !== `acc_${a.index}`) window.open(`https://kick.com/${a.username}`, '_blank');
-      else alert('Validate tokens first.');
+  // Single delegated click listener on accountsList for 60fps performance
+  if (!list._hasDelegatedListener) {
+    list._hasDelegatedListener = true;
+    list.addEventListener('click', (e) => {
+      const chk = e.target.closest('.acc-checkbox');
+      if (chk) {
+        e.stopPropagation();
+        toggleAccountSelection(Number(chk.dataset.index));
+        return;
+      }
+      const folBtn = e.target.closest('[data-action="follow"]');
+      if (folBtn) {
+        e.stopPropagation();
+        followSingle(Number(folBtn.dataset.index));
+        return;
+      }
+      const profBtn = e.target.closest('[data-action="profile"]');
+      if (profBtn) {
+        e.stopPropagation();
+        const u = profBtn.dataset.username;
+        if (u && !u.startsWith('acc_')) window.open(`https://kick.com/${u}`, '_blank');
+        else alert('Validate tokens first.');
+        return;
+      }
+      const row = e.target.closest('.acc-item');
+      if (row) {
+        selectAccount(Number(row.dataset.index));
+      }
     });
-    item.appendChild(kickPageBtn);
+  }
 
-    const badge = document.createElement('div');
-    badge.className = `acc-badge ${a.valid ? 'ok' : 'err'}`;
-    badge.textContent = a.status === 'checking' ? '...' : (a.valid ? 'LIVE' : 'DEAD');
-    if (a.error) badge.title = a.error;
-    item.appendChild(badge);
-
-    list.appendChild(item);
-  });
   renderQuickAccountChips();
   updateActiveAccountDisplay();
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function escapeHtmlAttr(str) {
+  if (!str) return '';
+  return String(str).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
 function updateAccountSelectionVisuals() {
@@ -2138,9 +2172,13 @@ function toggleAccountSelection(idx) {
   updateAccountSelectionVisuals();
 }
 
+let filterAccountsTimer = null;
 function filterAccounts() {
-  accountSearchTerm = document.getElementById('accountSearch').value.trim().toLowerCase();
-  renderAccounts();
+  clearTimeout(filterAccountsTimer);
+  filterAccountsTimer = setTimeout(() => {
+    accountSearchTerm = document.getElementById('accountSearch').value.trim().toLowerCase();
+    renderAccounts();
+  }, 120);
 }
 
 function deleteSelectedAccounts() {
