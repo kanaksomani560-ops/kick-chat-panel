@@ -60,6 +60,7 @@ class ConnectRequest(BaseModel):
 class CheckTokenRequest(BaseModel):
     token: str
     proxy: Optional[str] = None
+    force: bool = True
 
 class SendRequest(BaseModel):
     chatroom_id: int
@@ -150,16 +151,17 @@ def load_disk_cache() -> dict:
             pass
     return {}
 
-def lookup_username(token: str, proxy: str = None) -> dict:
+def lookup_username(token: str, proxy: str = None, force: bool = False) -> dict:
     bare = token.strip()
     if ":" in bare: bare = bare.split(":")[-1]
     if "|" in bare: bare = bare.split("|")[-1]
     
     disk_cache = load_disk_cache()
-    if bare in disk_cache:
-        return disk_cache[bare]
-    if bare in username_cache:
-        return username_cache[bare]
+    if not force:
+        if bare in disk_cache:
+            return disk_cache[bare]
+        if bare in username_cache:
+            return username_cache[bare]
     try:
         r = make_session(token=bare, proxy=proxy).get("https://kick.com/api/v1/user", timeout_seconds=8)
         if r.status_code == 200:
@@ -167,7 +169,7 @@ def lookup_username(token: str, proxy: str = None) -> dict:
             username = data.get("username") or data.get("name") or ""
             uid = str(data.get("id", ""))
             if not username or username.lower() == "unknown":
-                return {"error": "Unknown username — token likely invalid"}
+                return {"error": "Unknown username - token likely invalid"}
             result = {"username": username, "id": uid}
             username_cache[bare] = result
             disk_cache[bare] = result
@@ -177,11 +179,30 @@ def lookup_username(token: str, proxy: str = None) -> dict:
             except Exception:
                 pass
             return result
+        
+        # Invalidate dead or revoked tokens from disk cache
+        if r.status_code in (401, 403, 404):
+            if bare in disk_cache:
+                del disk_cache[bare]
+                try:
+                    with open(CACHE_FILE, "w", encoding="utf-8") as f:
+                        json.dump(disk_cache, f, indent=2)
+                except Exception:
+                    pass
+            if bare in username_cache:
+                del username_cache[bare]
+
+        if r.status_code == 401:
+            return {"error": "HTTP 401 (Token Invalid / Expired)"}
+        elif r.status_code == 403:
+            return {"error": "HTTP 403 (Cloudflare Block - Use Proxy)"}
+        elif r.status_code == 429:
+            return {"error": "HTTP 429 (Rate Limited - Slow Down)"}
         return {"error": f"HTTP {r.status_code}"}
     except Exception as e:
         return {"error": str(e)}
 
-# ── ROUTES ────────────────────────────────────────────────────────────────────
+# ── ROUTES ──
 
 @app.post("/api/connect")
 async def connect_channel(req: ConnectRequest):
@@ -201,7 +222,7 @@ async def connect_channel(req: ConnectRequest):
 
 @app.post("/api/check_token")
 async def check_token(req: CheckTokenRequest):
-    result = lookup_username(req.token, req.proxy)
+    result = lookup_username(req.token, req.proxy, force=req.force)
     if "error" in result:
         return {"ok": False, "valid": False, "error": result["error"]}
     return {"ok": True, "valid": True, "username": result["username"], "id": result["id"]}

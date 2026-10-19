@@ -1893,23 +1893,18 @@ function saveTokenCache(lines, accountsList) {
 async function validateTokens() {
   const lines = document.getElementById('tokensArea').value.split('\n').map(l=>l.trim()).filter(Boolean);
   if (!lines.length) return;
-  const currentKey = JSON.stringify(lines);
   const st = document.getElementById('tokenCount');
 
-  if (currentKey === tokenListKey && tokenCache.accounts && tokenCache.accounts.length === lines.length) {
-    accounts = tokenCache.accounts.map((item, idx) => ({ ...item, index: idx + 1 }));
-    const live = accounts.filter(a=>a.valid).length;
-    const dead = accounts.length - live;
-    st.textContent = `${live} live / ${dead} dead`;
-    document.getElementById('accCount').textContent = `${live} live / ${dead} dead`;
-    renderAccounts();
-    return;
-  }
-
-  st.textContent = `validating ${lines.length} tokens...`;
+  st.textContent = `Validating ${lines.length} tokens...`;
   accounts = new Array(lines.length);
   
-  // Batched validation (4 concurrent tokens per chunk with 100ms pause) to prevent Kick HTTP 429 rate limit
+  // Show initial placeholder accounts right away so UI isn't blank
+  for (let i = 0; i < lines.length; i++) {
+    accounts[i] = { index: i + 1, token: lines[i], valid: false, username: `Checking #${i+1}...`, id: '', status: 'checking' };
+  }
+  renderAccounts();
+
+  // Validate in batches of 4 with a 100ms pause to avoid Kick 429 rate limits
   const BATCH_SIZE = 4;
   for (let i = 0; i < lines.length; i += BATCH_SIZE) {
     const chunk = lines.slice(i, i + BATCH_SIZE);
@@ -1918,21 +1913,43 @@ async function validateTokens() {
       return fetch(`${API}/api/check_token`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, proxy: getRandomProxy() })
+        body: JSON.stringify({ token, proxy: getRandomProxy(), force: true })
       })
       .then(r => r.json())
       .then(d => {
-        accounts[idx] = { index: idx + 1, token, valid: d.valid || false, username: d.username || `acc_${idx+1}`, id: d.id || '' };
+        accounts[idx] = {
+          index: idx + 1,
+          token,
+          valid: !!d.valid,
+          username: d.username || `acc_${idx+1}`,
+          id: d.id || '',
+          error: d.error || '',
+          status: d.valid ? 'live' : 'dead'
+        };
       })
-      .catch(() => {
-        accounts[idx] = { index: idx + 1, token, valid: false, username: `acc_${idx+1}`, id: '' };
+      .catch(err => {
+        accounts[idx] = {
+          index: idx + 1,
+          token,
+          valid: false,
+          username: `acc_${idx+1}`,
+          id: '',
+          error: err.message || 'Connection error',
+          status: 'dead'
+        };
       });
     }));
-    st.textContent = `validating ${Math.min(i + BATCH_SIZE, lines.length)} / ${lines.length}...`;
+
+    const currentLive = accounts.filter(a => a && a.valid).length;
+    const currentChecked = Math.min(i + BATCH_SIZE, lines.length);
+    st.textContent = `Validating ${currentChecked}/${lines.length}... (${currentLive} Live)`;
+    document.getElementById('accCount').textContent = `${currentLive} live / ${currentChecked - currentLive} dead`;
+    renderAccounts();
+
     if (i + BATCH_SIZE < lines.length) await new Promise(r => setTimeout(r, 100));
   }
   
-  const live = accounts.filter(a=>a.valid).length;
+  const live = accounts.filter(a => a.valid).length;
   const dead = accounts.length - live;
   st.textContent = `${live} live / ${dead} dead`;
   document.getElementById('accCount').textContent = `${live} live / ${dead} dead`;
@@ -1946,7 +1963,7 @@ function renderAccounts() {
   const bar = document.getElementById('selectionBar');
   const filtered = accounts.filter(a => {
     if (accountSearchTerm && !a.username.toLowerCase().includes(accountSearchTerm)) return false;
-    if (accountFilterMode === 'live') return a.valid;
+    if (accountFilterMode === 'live') return a.valid || a.status === 'checking';
     if (accountFilterMode === 'dead') return !a.valid;
     if (accountFilterMode === 'selected') return selectedTokenIndices.has(a.index);
     return true;
