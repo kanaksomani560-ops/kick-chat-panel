@@ -1006,7 +1006,8 @@
           <button class="btn btn-blue" onclick="massFollow('selected')" style="flex:1; font-size:9px; padding:8px 4px;">FOLLOW SELECTED</button>
           <button class="btn btn-dark" onclick="massFollow('all')" style="flex:1; font-size:9px; padding:8px 4px;">FOLLOW ALL</button>
         </div>
-        <button class="btn btn-green btn-full" onclick="checkFollowStatus()" style="margin-top:8px; font-size:10px; padding:6px; letter-spacing:1px; font-weight:bold;">🔎 CHECK FOLLOW STATUS</button>
+        <button class="btn btn-green btn-full" onclick="checkFollowStatus()" style="margin-top:8px; font-size:10px; padding:6px; letter-spacing:1px; font-weight:bold;">🔍 CHECK FOLLOW STATUS</button>
+        <button class="btn btn-green btn-full" onclick="massFollow('not_following')" id="followNonFollowersBtn" style="margin-top:6px; font-size:11px; padding:8px 6px; font-weight:bold; letter-spacing:0.5px; background:linear-gradient(135deg, #10b981, #059669); display:none;">⚡ FOLLOW NON-FOLLOWERS (<span id="notFollowingBtnCount">0</span>)</button>
         <div style="margin-top:10px; display:flex; align-items:center; gap:8px;">
           <input type="checkbox" id="useStealthBrowser" style="width:14px; height:14px; cursor:pointer;"/>
           <label for="useStealthBrowser" style="font-size:10px; cursor:pointer; color:var(--accent); font-weight: bold;">⚡ ENABLE STEALTH BROWSER (SLOW)</label>
@@ -1025,6 +1026,8 @@
           <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;">
             <button class="btn btn-dark" id="filterAllBtn" onclick="setAccountFilter('all')" style="font-size:10px; padding:8px 10px;">All</button>
             <button class="btn btn-dark active" id="filterLiveBtn" onclick="setAccountFilter('live')" style="font-size:10px; padding:8px 10px;">Live</button>
+            <button class="btn btn-dark" id="filterNotFollowingBtn" onclick="setAccountFilter('not_following')" style="font-size:10px; padding:8px 10px; color:#f59e0b;">Not Following (<span id="notFollowingCount">0</span>)</button>
+            <button class="btn btn-dark" id="filterFollowingBtn" onclick="setAccountFilter('following')" style="font-size:10px; padding:8px 10px; color:#10b981;">Following (<span id="followingCount">0</span>)</button>
             <button class="btn btn-dark" id="filterDeadBtn" onclick="setAccountFilter('dead')" style="font-size:10px; padding:8px 10px;">Dead</button>
             <button class="btn btn-dark" id="filterSelectedBtn" onclick="setAccountFilter('selected')" style="font-size:10px; padding:8px 10px;">Selected</button>
           </div>
@@ -1562,10 +1565,12 @@ function importTokensToAccounts() {
 
 function setAccountFilter(mode) {
   accountFilterMode = mode;
-  document.getElementById('filterAllBtn').classList.toggle('active', mode === 'all');
-  document.getElementById('filterLiveBtn').classList.toggle('active', mode === 'live');
-  document.getElementById('filterDeadBtn').classList.toggle('active', mode === 'dead');
-  document.getElementById('filterSelectedBtn').classList.toggle('active', mode === 'selected');
+  document.getElementById('filterAllBtn')?.classList.toggle('active', mode === 'all');
+  document.getElementById('filterLiveBtn')?.classList.toggle('active', mode === 'live');
+  document.getElementById('filterDeadBtn')?.classList.toggle('active', mode === 'dead');
+  document.getElementById('filterSelectedBtn')?.classList.toggle('active', mode === 'selected');
+  document.getElementById('filterNotFollowingBtn')?.classList.toggle('active', mode === 'not_following');
+  document.getElementById('filterFollowingBtn')?.classList.toggle('active', mode === 'following');
   renderAccounts();
 }
 
@@ -1839,6 +1844,9 @@ async function connectChannel(override) {
       addBotLog(`Connected to #${channelName} (room ${chatroomId})`, 'success');
       updateChatFrame();
       loadKickEmotes(channelName);
+      const fTarget = document.getElementById('followTargetInput');
+      if (fTarget) fTarget.value = channelName;
+      setTimeout(() => { if (typeof checkFollowStatus === 'function') checkFollowStatus(); }, 600);
     } else {
       if (st) { st.textContent = `✗ ${data.error}`; st.className = 'sline err'; }
       addBotLog(`Connect failed: ${data.error}`, 'error');
@@ -2008,13 +2016,33 @@ function renderAccounts() {
     if (accountFilterMode === 'live') return a.valid || a.status === 'checking';
     if (accountFilterMode === 'dead') return !a.valid;
     if (accountFilterMode === 'selected') return selectedTokenIndices.has(a.index);
+    if (accountFilterMode === 'following') return a.valid && a.following === true;
+    if (accountFilterMode === 'not_following') return a.valid && a.following !== true;
     return true;
   });
   const liveCount = accounts.filter(a => a.valid).length;
   const deadCount = accounts.filter(a => !a.valid).length;
+  const followingCount = accounts.filter(a => a.valid && a.following === true).length;
+  const notFollowingCount = accounts.filter(a => a.valid && a.following !== true).length;
+
   document.getElementById('accCount').textContent = `${liveCount} live / ${deadCount} dead`;
+  const nfEl = document.getElementById('notFollowingCount');
+  if (nfEl) nfEl.textContent = notFollowingCount;
+  const fEl = document.getElementById('followingCount');
+  if (fEl) fEl.textContent = followingCount;
+  const btnNf = document.getElementById('notFollowingBtnCount');
+  if (btnNf) btnNf.textContent = notFollowingCount;
+  const followNfBtn = document.getElementById('followNonFollowersBtn');
+  if (followNfBtn) {
+    followNfBtn.style.display = notFollowingCount > 0 ? 'block' : 'none';
+  }
+
   if (!filtered.length) {
-    const emptyText = accountSearchTerm ? 'No accounts match your search' : (accountFilterMode === 'dead' ? 'No dead accounts' : accountFilterMode === 'selected' ? 'No selected accounts' : 'No accounts available');
+    const emptyText = accountSearchTerm ? 'No accounts match your search' : 
+      (accountFilterMode === 'dead' ? 'No dead accounts' : 
+      accountFilterMode === 'selected' ? 'No selected accounts' : 
+      accountFilterMode === 'following' ? 'No accounts following yet' : 
+      accountFilterMode === 'not_following' ? 'All live accounts are following!' : 'No accounts available');
     list.innerHTML = `<div class="empty-msg"><div class="big">NO ACCOUNTS</div><p>${emptyText}</p></div>`;
     bar.style.display = 'none';
     return;
@@ -2045,13 +2073,26 @@ function renderAccounts() {
     const name = document.createElement('div');
     name.className = `acc-name ${a.valid ? '' : 'dead'}`;
     name.textContent = a.username;
+    if (a.error) name.title = `Status: ${a.error}`;
     item.appendChild(name);
+
+    if (a.following === true) {
+      const folBadge = document.createElement('span');
+      folBadge.style.cssText = 'font-size:9px;padding:2px 6px;border-radius:6px;background:rgba(16,185,129,0.15);color:#10b981;font-weight:bold;margin-left:6px;white-space:nowrap;';
+      folBadge.textContent = 'FOLLOWING';
+      item.appendChild(folBadge);
+    } else if (a.following === false) {
+      const folBadge = document.createElement('span');
+      folBadge.style.cssText = 'font-size:9px;padding:2px 6px;border-radius:6px;background:rgba(245,158,11,0.15);color:#f59e0b;font-weight:bold;margin-left:6px;white-space:nowrap;';
+      folBadge.textContent = 'NOT FOLLOWING';
+      item.appendChild(folBadge);
+    }
 
     const followBtn = document.createElement('button');
     followBtn.type = 'button';
     followBtn.className = 'acc-follow-btn';
     followBtn.title = 'Follow with this account';
-    followBtn.textContent = '👤+';
+    followBtn.textContent = '👤 +';
     followBtn.addEventListener('click', e => { e.stopPropagation(); followSingle(a.index); });
     item.appendChild(followBtn);
 
@@ -2059,7 +2100,7 @@ function renderAccounts() {
     kickPageBtn.type = 'button';
     kickPageBtn.className = 'acc-follow-btn';
     kickPageBtn.title = 'Open Kick profile';
-    kickPageBtn.textContent = '🌐';
+    kickPageBtn.textContent = '🔗';
     kickPageBtn.style.cssText = 'padding:4px 7px;font-size:12px;margin-left:4px;';
     kickPageBtn.addEventListener('click', e => {
       e.stopPropagation();
@@ -2068,28 +2109,10 @@ function renderAccounts() {
     });
     item.appendChild(kickPageBtn);
 
-    const openBrowserBtn = document.createElement('button');
-    openBrowserBtn.type = 'button';
-    openBrowserBtn.className = 'acc-follow-btn';
-    openBrowserBtn.title = 'Open logged in browser';
-    openBrowserBtn.textContent = '🔓';
-    openBrowserBtn.style.cssText = 'padding:4px 7px;font-size:12px;margin-left:4px;';
-    openBrowserBtn.addEventListener('click', async e => {
-      e.stopPropagation();
-      if (!a.token) { alert('No token.'); return; }
-      openBrowserBtn.textContent = '⏳'; openBrowserBtn.disabled = true;
-      try {
-        const r = await fetch(`${API}/api/open_browser`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ token: a.token, username: a.username, url: 'https://kick.com' }) });
-        const d = await r.json();
-        if (!d.ok) alert('Failed: ' + (d.error || 'unknown'));
-      } catch(err) { alert('Error: ' + err.message); }
-      setTimeout(() => { openBrowserBtn.textContent = '🔓'; openBrowserBtn.disabled = false; }, 2000);
-    });
-    item.appendChild(openBrowserBtn);
-
     const badge = document.createElement('div');
     badge.className = `acc-badge ${a.valid ? 'ok' : 'err'}`;
-    badge.textContent = a.valid ? 'LIVE' : 'DEAD';
+    badge.textContent = a.status === 'checking' ? '...' : (a.valid ? 'LIVE' : 'DEAD');
+    if (a.error) badge.title = a.error;
     item.appendChild(badge);
 
     list.appendChild(item);
@@ -2226,14 +2249,16 @@ function saveProxies() {
 })();
 
 async function checkFollowStatus() {
-  const target = document.getElementById('followTargetInput').value.trim();
-  if (!target) { alert("Enter a streamer name first!"); return; }
+  const targetInput = document.getElementById('followTargetInput');
+  const target = (targetInput ? targetInput.value.trim() : '') || channelName;
+  if (!target) { alert("Enter or connect a channel first!"); return; }
   
   const liveAccounts = accounts.filter(a => a.valid);
   if (!liveAccounts.length) return;
   
   const st = document.getElementById('followStatus');
-  st.textContent = `checking follow status for ${liveAccounts.length} accounts...`; st.className = 'sline';
+  st.textContent = `Checking follow status for ${liveAccounts.length} accounts on #${target}...`;
+  st.className = 'sline';
   
   try {
     const rConnect = await fetch(`${API}/api/connect`, {
@@ -2245,12 +2270,12 @@ async function checkFollowStatus() {
     if (!dConnect.ok) throw new Error(dConnect.error || "Channel lookup failed");
     
     const targetId = String(dConnect.user_id);
-    if (!targetId || targetId === "null" || targetId === "undefined") throw new Error("Could not resolve streamer ID. Try connecting to the channel again.");
+    const channelSlug = dConnect.channel || target;
 
     const r = await fetch(`${API}/api/check_follows`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ target_channel: target, target_id: targetId, tokens: liveAccounts.map(a => a.token), proxies: getLoadedProxiesList() })
+      body: JSON.stringify({ target_channel: channelSlug, target_id: targetId, tokens: liveAccounts.map(a => a.token), proxies: getLoadedProxiesList() })
     });
     const d = await r.json();
     
@@ -2264,31 +2289,40 @@ async function checkFollowStatus() {
         }
       });
       
-      const followingCount = liveAccounts.filter(a => a.following).length;
-      st.textContent = `✓ DONE: ${followingCount} accounts are already following ${target}.`;
+      const followingCount = liveAccounts.filter(a => a.following === true).length;
+      const notFollowingCount = liveAccounts.filter(a => a.following !== true).length;
+      st.textContent = `✔ ${followingCount} Following / ${notFollowingCount} Not Following (#${target})`;
       st.className = 'sline ok';
       renderAccounts();
     } else {
-      st.textContent = `✗ Error: ${d.error || 'Check failed'}`; st.className = 'sline err';
+      st.textContent = `❌ Error: ${d.error || 'Check failed'}`;
+      st.className = 'sline err';
     }
   } catch(e) { 
-    st.textContent = `✗ ${e.message || 'Error occurred'}`; 
+    st.textContent = `❌ ${e.message || 'Error occurred'}`; 
     st.className = 'sline err'; 
   }
 }
 
 async function massFollow(mode) {
-  const target = document.getElementById('followTargetInput').value.trim();
+  const targetInput = document.getElementById('followTargetInput');
+  const target = (targetInput ? targetInput.value.trim() : '') || channelName;
   if (!target) { alert("Enter a streamer name first!"); return; }
   
   let targetTokens = [];
   if (mode === 'all') {
     targetTokens = accounts.filter(a => a.valid).map(a => a.token);
+  } else if (mode === 'not_following') {
+    // Exclude accounts that already follow!
+    targetTokens = accounts.filter(a => a.valid && a.following !== true).map(a => a.token);
   } else {
     targetTokens = accounts.filter(a => a.valid && selectedTokenIndices.has(a.index)).map(a => a.token);
   }
   
-  if (!targetTokens.length) { alert("No accounts selected!"); return; }
+  if (!targetTokens.length) {
+    alert(mode === 'not_following' ? "All active accounts are already following this channel!" : "No accounts selected!");
+    return;
+  }
   
   const delay = parseInt(document.getElementById('followDelayInput').value) || 2000;
   const isStealth = document.getElementById('useStealthBrowser').checked;
@@ -2314,13 +2348,24 @@ async function massFollow(mode) {
     });
     const d = await r.json();
     if (d.ok) {
+      // Mark successful ones as following = true and remove them from non-followers!
+      if (d.results && d.results.length) {
+        d.results.forEach((res, resIdx) => {
+          if (res.ok) {
+            const tokenStr = targetTokens[res.index - 1] || targetTokens[resIdx];
+            const acc = accounts.find(a => a.token === tokenStr);
+            if (acc) acc.following = true;
+          }
+        });
+      }
+      renderAccounts();
       const failed = targetTokens.length - d.followed;
-      st.textContent = `✓ DONE: ${d.followed} followed, ${failed} failed.`;
+      st.textContent = `✔ DONE: ${d.followed} followed, ${failed} failed.`;
       st.className = d.followed > 0 ? 'sline ok' : 'sline err';
     } else {
-      st.textContent = `✗ Error: ${d.error}`; st.className = 'sline err';
+      st.textContent = `❌ Error: ${d.error}`; st.className = 'sline err';
     }
-  } catch(e) { st.textContent = `✗ ${e.message}`; st.className = 'sline err'; }
+  } catch(e) { st.textContent = `❌ ${e.message}`; st.className = 'sline err'; }
 }
 
 // ON LOAD
