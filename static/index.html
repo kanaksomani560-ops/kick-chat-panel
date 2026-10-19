@@ -969,8 +969,9 @@
       <div class="section-title">Tokens</div>
       <textarea id="tokensArea" placeholder="Paste tokens, one per line..." style="min-height:70px;" oninput="updateTokenCount()"></textarea>
       <div style="display:flex;gap:6px;margin-top:8px;">
-        <button class="btn btn-dark" onclick="loadTokensFile()" style="flex:1;">Load File</button>
-        <button class="btn btn-green" onclick="validateTokens()" style="flex:1;">Validate</button>
+        <button class="btn btn-dark" onclick="loadTokensFile()" style="flex:1;font-size:11px;" title="Reload tokens from server file">Load File</button>
+        <button class="btn btn-dark" onclick="saveTokensFile()" style="flex:1;font-size:11px;" title="Save tokens to server file">Save</button>
+        <button class="btn btn-green" onclick="validateTokens()" style="flex:1.2;font-size:11px;" title="Validate all tokens">Validate</button>
       </div>
       <div class="sline" id="tokenCount">no tokens</div>
       <div class="sline" id="proxyCount" style="margin-top:4px; font-weight: bold; color:var(--accent);">0 proxies loaded</div>
@@ -1847,21 +1848,61 @@ async function connectChannel(override) {
 
 // ── TOKENS ───────────────────────────────────────────────────────────────────────
 function updateTokenCount() {
-  const n = document.getElementById('tokensArea').value.split('\n').filter(l=>l.trim()).length;
+  const val = document.getElementById('tokensArea').value;
+  const n = val.split('\n').filter(l=>l.trim()).length;
   document.getElementById('tokenCount').textContent = `${n} token(s) pasted`;
+  try {
+    localStorage.setItem('tokens_draft', val);
+  } catch(e) {}
 }
 
-async function loadTokensFile() {
+async function saveTokensFile(silent = false) {
+  const val = document.getElementById('tokensArea').value;
+  const lines = val.split('\n').map(l => l.trim()).filter(Boolean);
+  if (!lines.length && !silent) {
+    alert('Tokens area is empty! Paste tokens first.');
+    return;
+  }
+  try {
+    const r = await fetch(`${API}/api/tokens/save`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tokens: lines })
+    });
+    const d = await r.json();
+    if (d.ok) {
+      localStorage.setItem('tokens_draft', val);
+      if (!silent) {
+        const st = document.getElementById('tokenCount');
+        st.textContent = `✅ Saved ${lines.length} tokens to file!`;
+        setTimeout(() => { updateTokenCount(); }, 2500);
+      }
+    }
+  } catch (e) {
+    if (!silent) alert('Error saving tokens: ' + e.message);
+  }
+}
+
+async function loadTokensFile(force = false) {
   try {
     const r = await fetch(`${API}/api/tokens/load`);
     const d = await r.json();
     if (d.ok && d.tokens && d.tokens.length) {
-      document.getElementById('tokensArea').value = d.tokens.join('\n');
-      updateTokenCount();
-      if (d.accounts && d.accounts.length) {
+      const currentArea = document.getElementById('tokensArea').value.trim();
+      if (!currentArea || force) {
+        document.getElementById('tokensArea').value = d.tokens.join('\n');
+        updateTokenCount();
+      }
+      if (d.accounts && d.accounts.length && (!accounts || !accounts.length || force)) {
         accounts = d.accounts;
         renderAccounts();
         updateActiveAccountDisplay();
+      }
+    } else {
+      const draft = localStorage.getItem('tokens_draft');
+      if (draft && !document.getElementById('tokensArea').value.trim()) {
+        document.getElementById('tokensArea').value = draft;
+        updateTokenCount();
       }
     }
   } catch(e) {}
@@ -1894,6 +1935,7 @@ async function validateTokens() {
   const lines = document.getElementById('tokensArea').value.split('\n').map(l=>l.trim()).filter(Boolean);
   if (!lines.length) return;
   const st = document.getElementById('tokenCount');
+  await saveTokensFile(true);
 
   st.textContent = `Validating ${lines.length} tokens...`;
   accounts = new Array(lines.length);
