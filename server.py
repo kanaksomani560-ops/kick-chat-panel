@@ -88,11 +88,13 @@ class CheckFollowsRequest(BaseModel):
     target_id: Optional[Any] = None
     target_channel: Optional[str] = None
     tokens: List[str]
+    proxies: Optional[List[str]] = []
 
 class MassFollowRequest(BaseModel):
     target_channel: str
     tokens: List[str]
     delay_ms: int = 2000
+    proxies: Optional[List[str]] = []
 
 # ── TLS SESSION ───────────────────────────────────────────────────────────────
 def parse_proxy_string(proxy: str):
@@ -224,12 +226,13 @@ async def follow_mass(req: MassFollowRequest):
         return {"ok": False, "error": f"Invalid channel '{req.target_channel}'"}
 
     results = []
+    proxies = [p.strip() for p in (req.proxies or []) if p.strip()]
 
-    def do_follow(token, idx):
+    def do_follow(token, idx, proxy_str=None):
         bare = token.strip()
         if ":" in bare: bare = bare.split(":")[-1]
         if "|" in bare: bare = bare.split("|")[-1]
-        session = make_session(token=bare, channel=channel_slug)
+        session = make_session(token=bare, channel=channel_slug, proxy=proxy_str)
         try:
             session.get(f"https://kick.com/{channel_slug}", timeout_seconds=10)
             xsrf_cookie = session.cookies.get("XSRF-TOKEN")
@@ -247,25 +250,28 @@ async def follow_mass(req: MassFollowRequest):
             if not ok and "Just a moment" in r.text: status = "Cloudflare Block"
             elif r.status_code == 429: status = "Rate Limited"
             elif r.status_code == 401: status = "Invalid Token"
-            results.append({"index": idx, "ok": ok, "status": status})
+            results.append({"index": idx, "ok": ok, "status": status, "proxy_used": bool(proxy_str)})
         except Exception as e:
-            results.append({"index": idx, "ok": False, "status": str(e)})
+            results.append({"index": idx, "ok": False, "status": str(e), "proxy_used": bool(proxy_str)})
 
     for i, token in enumerate(req.tokens):
-        if i > 0 and req.delay_ms > 0: time.sleep(req.delay_ms / 1000)
-        t = threading.Thread(target=do_follow, args=(token, i + 1), daemon=True)
+        if i > 0 and req.delay_ms > 0:
+            jitter = random.uniform(0.85, 1.45)
+            time.sleep((req.delay_ms / 1000) * jitter)
+        proxy_str = proxies[i % len(proxies)] if proxies else None
+        t = threading.Thread(target=do_follow, args=(token, i + 1, proxy_str), daemon=True)
         t.start(); t.join()
 
     return {"ok": True, "followed": sum(1 for r in results if r["ok"]), "results": results}
 
 
-# Stealth follow — uses Playwright browser to bypass Cloudflare/Kasada
+# Stealth follow - uses Playwright browser to bypass Cloudflare/Kasada
 @app.post("/api/follow_stealth")
 async def follow_stealth(req: MassFollowRequest):
-    print(f"[FOLLOW] called — PLAYWRIGHT_OK={PLAYWRIGHT_OK}, tokens={len(req.tokens) if req.tokens else 0}, channel={req.target_channel}")
+    print(f"[FOLLOW] called - PLAYWRIGHT_OK={PLAYWRIGHT_OK}, tokens={len(req.tokens) if req.tokens else 0}, channel={req.target_channel}")
     if not PLAYWRIGHT_OK:
         print("[FOLLOW] Playwright not available")
-        return {"ok": False, "error": "Playwright not installed — add playwright to requirements.txt and redeploy."}
+        return {"ok": False, "error": "Playwright not installed - add playwright to requirements.txt and redeploy."}
     if not req.tokens:
         print("[FOLLOW] No tokens provided")
         return {"ok": False, "error": "No tokens provided"}
@@ -276,19 +282,31 @@ async def follow_stealth(req: MassFollowRequest):
 
     print(f"[FOLLOW] Starting {len(req.tokens)} browser follows")
     results = []
+    proxies = [p.strip() for p in (req.proxies or []) if p.strip()]
 
-    def do_browser_follow(token, idx):
+    def do_browser_follow(token, idx, proxy_str=None):
         print(f"[FOLLOW] Starting browser follow for token {idx}")
         bare = token.strip()
         if ":" in bare: bare = bare.split(":")[-1]
         if "|" in bare: bare = bare.split("|")[-1]
         try:
             with sync_playwright() as p:
-                browser = p.chromium.launch(headless=True, args=[
+                launch_args = [
                     "--no-sandbox", "--disable-setuid-sandbox",
                     "--disable-blink-features=AutomationControlled",
                     "--disable-dev-shm-usage",
-                ])
+                ]
+                launch_kwargs = {"headless": True, "args": launch_args}
+                if proxy_str:
+                    pd = parse_proxy_string(proxy_str)
+                    if pd:
+                        pw_proxy = {"server": pd["server"]}
+                        if pd.get("username"):
+                            pw_proxy["username"] = pd["username"]
+                            pw_proxy["password"] = pd.get("password", "")
+                        launch_kwargs["proxy"] = pw_proxy
+
+                browser = p.chromium.launch(**launch_kwargs)
                 ctx = browser.new_context(
                     user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36",
                     viewport={"width": 1280, "height": 720},
@@ -334,17 +352,19 @@ async def follow_stealth(req: MassFollowRequest):
                     ok = True
                     already = True
                 status = "already followed" if already else ("followed" if ok else f"HTTP {js_result.get('status', '?')}")
-                print(f"[FOLLOW] Token {idx}: {status} — raw: {js_result}")
-                results.append({"index": idx, "ok": ok, "status": status})
+                print(f"[FOLLOW] Token {idx}: {status} - raw: {js_result}")
+                results.append({"index": idx, "ok": ok, "status": status, "proxy_used": bool(proxy_str)})
                 browser.close()
         except Exception as e:
             print(f"[FOLLOW] Token {idx} ERROR: {e}")
-            results.append({"index": idx, "ok": False, "status": str(e)})
+            results.append({"index": idx, "ok": False, "status": str(e), "proxy_used": bool(proxy_str)})
 
     for i, token in enumerate(req.tokens):
         if i > 0 and req.delay_ms > 0:
-            time.sleep(req.delay_ms / 1000)
-        t = threading.Thread(target=do_browser_follow, args=(token, i + 1), daemon=True)
+            jitter = random.uniform(0.85, 1.45)
+            time.sleep((req.delay_ms / 1000) * jitter)
+        proxy_str = proxies[i % len(proxies)] if proxies else None
+        t = threading.Thread(target=do_browser_follow, args=(token, i + 1, proxy_str), daemon=True)
         t.start(); t.join()
 
     return {"ok": True, "followed": sum(1 for r in results if r["ok"]), "results": results}
@@ -354,6 +374,7 @@ async def follow_stealth(req: MassFollowRequest):
 async def check_follows(req: CheckFollowsRequest):
     if not req.tokens: return {"ok": False, "error": "No tokens provided"}
     channel_slug = (req.target_channel or "").strip().lower().split("/")[-1]
+    proxies = [p.strip() for p in (req.proxies or []) if p.strip()]
     if not channel_slug and req.target_id:
         try:
             r_ch = make_session().get(f"https://kick.com/api/v2/channels/{req.target_id}", timeout_seconds=8)
@@ -369,7 +390,8 @@ async def check_follows(req: CheckFollowsRequest):
         bare = token.strip()
         if ":" in bare: bare = bare.split(":")[-1]
         if "|" in bare: bare = bare.split("|")[-1]
-        session = make_session(token=bare, channel=channel_slug)
+        proxy_str = proxies[i % len(proxies)] if proxies else None
+        session = make_session(token=bare, channel=channel_slug, proxy=proxy_str)
         try:
             r = session.get(f"https://kick.com/api/v2/channels/{channel_slug}/me", timeout_seconds=10)
             if r.status_code == 200:

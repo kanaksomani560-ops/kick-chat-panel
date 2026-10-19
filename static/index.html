@@ -1909,22 +1909,34 @@ async function validateTokens() {
   st.textContent = `validating ${lines.length} tokens...`;
   accounts = new Array(lines.length);
   
-  // PARALLEL VALIDATION (FASTER)
-  await Promise.all(lines.map((token, i) =>
-    fetch(`${API}/api/check_token`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token, proxy: getRandomProxy()})})
-      .then(r=>r.json())
-      .then(d=>{ accounts[i]={index:i+1,token,valid:d.valid||false,username:d.username||`acc_${i+1}`,id:d.id||''}; })
-      .catch(()=>{ accounts[i]={index:i+1,token,valid:false,username:`acc_${i+1}`,id:''}; })
-  ));
+  // Batched validation (4 concurrent tokens per chunk with 100ms pause) to prevent Kick HTTP 429 rate limit
+  const BATCH_SIZE = 4;
+  for (let i = 0; i < lines.length; i += BATCH_SIZE) {
+    const chunk = lines.slice(i, i + BATCH_SIZE);
+    await Promise.all(chunk.map((token, chunkIdx) => {
+      const idx = i + chunkIdx;
+      return fetch(`${API}/api/check_token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, proxy: getRandomProxy() })
+      })
+      .then(r => r.json())
+      .then(d => {
+        accounts[idx] = { index: idx + 1, token, valid: d.valid || false, username: d.username || `acc_${idx+1}`, id: d.id || '' };
+      })
+      .catch(() => {
+        accounts[idx] = { index: idx + 1, token, valid: false, username: `acc_${idx+1}`, id: '' };
+      });
+    }));
+    st.textContent = `validating ${Math.min(i + BATCH_SIZE, lines.length)} / ${lines.length}...`;
+    if (i + BATCH_SIZE < lines.length) await new Promise(r => setTimeout(r, 100));
+  }
   
   const live = accounts.filter(a=>a.valid).length;
   const dead = accounts.length - live;
   st.textContent = `${live} live / ${dead} dead`;
   document.getElementById('accCount').textContent = `${live} live / ${dead} dead`;
   renderAccounts();
-  const liveTokens = accounts.filter(a=>a.valid).map(a=>a.token);
-  if (liveTokens.length)
-    fetch(`${API}/api/tokens/save`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tokens:liveTokens})});
 
   saveTokenCache(lines, accounts);
 }
@@ -2112,6 +2124,11 @@ async function checkProxies() {
   } catch(e) {}
 }
 
+function getLoadedProxiesList() {
+  const saved = localStorage.getItem("proxies") || (document.getElementById("proxiesArea") ? document.getElementById("proxiesArea").value : "");
+  return (saved || "").split("\n").map(l => l.trim()).filter(Boolean);
+}
+
 function getRandomProxy() {
   const saved = localStorage.getItem("proxies") || "";
   const lines = saved.split("\n").filter(l => l.trim());
@@ -2174,7 +2191,7 @@ async function checkFollowStatus() {
     const r = await fetch(`${API}/api/check_follows`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ target_channel: target, target_id: targetId, tokens: liveAccounts.map(a => a.token) })
+      body: JSON.stringify({ target_channel: target, target_id: targetId, tokens: liveAccounts.map(a => a.token), proxies: getLoadedProxiesList() })
     });
     const d = await r.json();
     
@@ -2217,16 +2234,24 @@ async function massFollow(mode) {
   const delay = parseInt(document.getElementById('followDelayInput').value) || 2000;
   const isStealth = document.getElementById('useStealthBrowser').checked;
   const endpoint = isStealth ? '/api/follow_stealth' : '/api/follow_mass';
-  
+  const loadedProxies = getLoadedProxiesList();
+
+  if (!loadedProxies.length) {
+    if (!confirm("⚠️ Warning: 0 proxies loaded!\n\nMass-following from a single IP can cause Kick to flag and invalidate your tokens.\n\nDo you want to proceed anyway?")) {
+      return;
+    }
+  }
+
   const st = document.getElementById('followStatus');
-  st.textContent = isStealth ? `Launching browsers (Stealth Mode)...` : `Processing follows for ${targetTokens.length} accounts...`; 
+  const proxyLabel = loadedProxies.length ? `(using ${loadedProxies.length} rotating proxies)` : '(direct IP - no proxy)';
+  st.textContent = isStealth ? `Launching browsers (Stealth Mode)... ${proxyLabel}` : `Processing follows for ${targetTokens.length} accounts ${proxyLabel}...`; 
   st.className = 'sline';
   
   try {
     const r = await fetch(`${API}${endpoint}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ target_channel: target, tokens: targetTokens, delay_ms: delay })
+      body: JSON.stringify({ target_channel: target, tokens: targetTokens, delay_ms: delay, proxies: loadedProxies })
     });
     const d = await r.json();
     if (d.ok) {
