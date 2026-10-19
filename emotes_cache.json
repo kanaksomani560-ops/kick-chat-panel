@@ -1,0 +1,893 @@
+[
+  {
+    "group": "global",
+    "emotes": [
+      {
+        "id": 2248821,
+        "name": "globalcry",
+        "url": "https://files.kick.com/emotes/2248821/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 2248813,
+        "name": "globalgg",
+        "url": "https://files.kick.com/emotes/2248813/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 2248822,
+        "name": "globalhappy",
+        "url": "https://files.kick.com/emotes/2248822/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 2248824,
+        "name": "globalharold",
+        "url": "https://files.kick.com/emotes/2248824/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 2248828,
+        "name": "globalhuh",
+        "url": "https://files.kick.com/emotes/2248828/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 2248825,
+        "name": "globaliq",
+        "url": "https://files.kick.com/emotes/2248825/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 2248827,
+        "name": "globallol",
+        "url": "https://files.kick.com/emotes/2248827/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 2248831,
+        "name": "globaloke",
+        "url": "https://files.kick.com/emotes/2248831/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 2248834,
+        "name": "globalpika",
+        "url": "https://files.kick.com/emotes/2248834/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 2248836,
+        "name": "globalque",
+        "url": "https://files.kick.com/emotes/2248836/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 2248835,
+        "name": "globalsad",
+        "url": "https://files.kick.com/emotes/2248835/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 2248832,
+        "name": "globalsus",
+        "url": "https://files.kick.com/emotes/2248832/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 2248819,
+        "name": "globalwhat",
+        "url": "https://files.kick.com/emotes/2248819/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 2248839,
+        "name": "globalBUH",
+        "url": "https://files.kick.com/emotes/2248839/fullsize",
+        "subscribers_only": true
+      },
+      {
+        "id": 2248841,
+        "name": "globalDUH",
+        "url": "https://files.kick.com/emotes/2248841/fullsize",
+        "subscribers_only": true
+      },
+      {
+        "id": 2248838,
+        "name": "globalevil",
+        "url": "https://files.kick.com/emotes/2248838/fullsize",
+        "subscribers_only": true
+      }
+    ]
+  },
+  {
+    "group": "Global",
+    "emotes": [
+      {
+        "id": 3753119,
+        "name": "asmonSmash",
+        "url": "https://files.kick.com/emotes/3753119/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 5380971,
+        "name": "AURAPULSE",
+        "url": "https://files.kick.com/emotes/5380971/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 5756662,
+        "name": "AYAYA",
+        "url": "https://files.kick.com/emotes/5756662/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 5882722,
+        "name": "BANG",
+        "url": "https://files.kick.com/emotes/5882722/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 4147910,
+        "name": "BBoomer",
+        "url": "https://files.kick.com/emotes/4147910/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 39251,
+        "name": "beeBobble",
+        "url": "https://files.kick.com/emotes/39251/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 37217,
+        "name": "Bwop",
+        "url": "https://files.kick.com/emotes/37217/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 5756614,
+        "name": "CaptFail",
+        "url": "https://files.kick.com/emotes/5756614/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 4148144,
+        "name": "catblobDance",
+        "url": "https://files.kick.com/emotes/4148144/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 4147900,
+        "name": "catKISS",
+        "url": "https://files.kick.com/emotes/4147900/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 37218,
+        "name": "Clap",
+        "url": "https://files.kick.com/emotes/37218/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 5756616,
+        "name": "DanceDance",
+        "url": "https://files.kick.com/emotes/5756616/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 5756666,
+        "name": "DonoWall",
+        "url": "https://files.kick.com/emotes/5756666/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 4147914,
+        "name": "duckPls",
+        "url": "https://files.kick.com/emotes/4147914/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 3645850,
+        "name": "EDDIE",
+        "url": "https://files.kick.com/emotes/3645850/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 39265,
+        "name": "EDMusiC",
+        "url": "https://files.kick.com/emotes/39265/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 5756668,
+        "name": "EZ",
+        "url": "https://files.kick.com/emotes/5756668/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 5756511,
+        "name": "FLASHBANG",
+        "url": "https://files.kick.com/emotes/5756511/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 39402,
+        "name": "Flowie",
+        "url": "https://files.kick.com/emotes/39402/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 37243,
+        "name": "gachiGASM",
+        "url": "https://files.kick.com/emotes/37243/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 5756671,
+        "name": "GIGACHAD",
+        "url": "https://files.kick.com/emotes/5756671/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 4055795,
+        "name": "GnomeDisco",
+        "url": "https://files.kick.com/emotes/4055795/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 4148076,
+        "name": "HaHaa",
+        "url": "https://files.kick.com/emotes/4148076/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 5273247,
+        "name": "highCortisol",
+        "url": "https://files.kick.com/emotes/5273247/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 4148074,
+        "name": "HYPERCLAP",
+        "url": "https://files.kick.com/emotes/4148074/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 5452913,
+        "name": "JudgeJackson",
+        "url": "https://files.kick.com/emotes/5452913/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 4147902,
+        "name": "KEKBye",
+        "url": "https://files.kick.com/emotes/4147902/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 37225,
+        "name": "KEKLEO",
+        "url": "https://files.kick.com/emotes/37225/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 37226,
+        "name": "KEKW",
+        "url": "https://files.kick.com/emotes/37226/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 5470844,
+        "name": "kickclassic",
+        "url": "https://files.kick.com/emotes/5470844/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 5339426,
+        "name": "kickDrops",
+        "url": "https://files.kick.com/emotes/5339426/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 5756621,
+        "name": "kkHuh",
+        "url": "https://files.kick.com/emotes/5756621/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 5273243,
+        "name": "lowCortisol",
+        "url": "https://files.kick.com/emotes/5273243/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 37227,
+        "name": "LULW",
+        "url": "https://files.kick.com/emotes/37227/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 4148128,
+        "name": "mericCat",
+        "url": "https://files.kick.com/emotes/4148128/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 5756381,
+        "name": "modCheck",
+        "url": "https://files.kick.com/emotes/5756381/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 5273241,
+        "name": "MOGGED",
+        "url": "https://files.kick.com/emotes/5273241/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 5756628,
+        "name": "MuteD",
+        "url": "https://files.kick.com/emotes/5756628/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 5756504,
+        "name": "NODDERS",
+        "url": "https://files.kick.com/emotes/5756504/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 5756602,
+        "name": "NugTime",
+        "url": "https://files.kick.com/emotes/5756602/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 4055796,
+        "name": "ODAJAM",
+        "url": "https://files.kick.com/emotes/4055796/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 37229,
+        "name": "OOOO",
+        "url": "https://files.kick.com/emotes/37229/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 5756623,
+        "name": "OuttaPocket",
+        "url": "https://files.kick.com/emotes/5756623/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 4147892,
+        "name": "PatrickBoo",
+        "url": "https://files.kick.com/emotes/4147892/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 37232,
+        "name": "PeepoClap",
+        "url": "https://files.kick.com/emotes/37232/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 37245,
+        "name": "peepoDJ",
+        "url": "https://files.kick.com/emotes/37245/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 5756675,
+        "name": "peepoRiot",
+        "url": "https://files.kick.com/emotes/5756675/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 37233,
+        "name": "PogU",
+        "url": "https://files.kick.com/emotes/37233/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 37230,
+        "name": "POLICE",
+        "url": "https://files.kick.com/emotes/37230/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 5756627,
+        "name": "politeCat",
+        "url": "https://files.kick.com/emotes/5756627/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 4147888,
+        "name": "ppJedi",
+        "url": "https://files.kick.com/emotes/4147888/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 37234,
+        "name": "Prayge",
+        "url": "https://files.kick.com/emotes/37234/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 5756644,
+        "name": "ratJAM",
+        "url": "https://files.kick.com/emotes/5756644/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 4148081,
+        "name": "Sadge",
+        "url": "https://files.kick.com/emotes/4148081/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 5756676,
+        "name": "SenpaiWhoo",
+        "url": "https://files.kick.com/emotes/5756676/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 5380973,
+        "name": "shoulderRoll",
+        "url": "https://files.kick.com/emotes/5380973/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 5755651,
+        "name": "SIT",
+        "url": "https://files.kick.com/emotes/5755651/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 5756632,
+        "name": "SUSSY",
+        "url": "https://files.kick.com/emotes/5756632/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 37236,
+        "name": "ThisIsFine",
+        "url": "https://files.kick.com/emotes/37236/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 5756677,
+        "name": "TriKool",
+        "url": "https://files.kick.com/emotes/5756677/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 3645849,
+        "name": "TRUEING",
+        "url": "https://files.kick.com/emotes/3645849/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 4147884,
+        "name": "vibePls",
+        "url": "https://files.kick.com/emotes/4147884/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 5756678,
+        "name": "WeirdChamp",
+        "url": "https://files.kick.com/emotes/5756678/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 5756680,
+        "name": "WeSmart",
+        "url": "https://files.kick.com/emotes/5756680/fullsize",
+        "subscribers_only": false
+      }
+    ]
+  },
+  {
+    "group": "Emojis",
+    "emotes": [
+      {
+        "id": 1730752,
+        "name": "emojiAngel",
+        "url": "https://files.kick.com/emotes/1730752/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 1730753,
+        "name": "emojiAngry",
+        "url": "https://files.kick.com/emotes/1730753/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 1579033,
+        "name": "emojiAstonished",
+        "url": "https://files.kick.com/emotes/1579033/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 1730754,
+        "name": "emojiAwake",
+        "url": "https://files.kick.com/emotes/1730754/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 1579036,
+        "name": "emojiBlowKiss",
+        "url": "https://files.kick.com/emotes/1579036/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 1730755,
+        "name": "emojiBubbly",
+        "url": "https://files.kick.com/emotes/1730755/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 1730756,
+        "name": "emojiCheerful",
+        "url": "https://files.kick.com/emotes/1730756/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 1730758,
+        "name": "emojiClown",
+        "url": "https://files.kick.com/emotes/1730758/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 1730759,
+        "name": "emojiCool",
+        "url": "https://files.kick.com/emotes/1730759/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 1730760,
+        "name": "emojiCrave",
+        "url": "https://files.kick.com/emotes/1730760/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 1730761,
+        "name": "emojiCry",
+        "url": "https://files.kick.com/emotes/1730761/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 1579040,
+        "name": "emojiCrying",
+        "url": "https://files.kick.com/emotes/1579040/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 1730762,
+        "name": "emojiCurious",
+        "url": "https://files.kick.com/emotes/1730762/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 1730765,
+        "name": "emojiCute",
+        "url": "https://files.kick.com/emotes/1730765/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 1730767,
+        "name": "emojiDead",
+        "url": "https://files.kick.com/emotes/1730767/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 1730768,
+        "name": "emojiDevil",
+        "url": "https://files.kick.com/emotes/1730768/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 1579041,
+        "name": "emojiDisappoint",
+        "url": "https://files.kick.com/emotes/1579041/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 1579042,
+        "name": "emojiDisguise",
+        "url": "https://files.kick.com/emotes/1579042/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 1730769,
+        "name": "emojiDJ",
+        "url": "https://files.kick.com/emotes/1730769/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 1730770,
+        "name": "emojiDown",
+        "url": "https://files.kick.com/emotes/1730770/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 1579044,
+        "name": "emojiEnraged",
+        "url": "https://files.kick.com/emotes/1579044/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 1579045,
+        "name": "emojiExcited",
+        "url": "https://files.kick.com/emotes/1579045/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 1579054,
+        "name": "emojiEyeRoll",
+        "url": "https://files.kick.com/emotes/1579054/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 1730772,
+        "name": "emojiFire",
+        "url": "https://files.kick.com/emotes/1730772/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 1730774,
+        "name": "emojiGamer",
+        "url": "https://files.kick.com/emotes/1730774/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 1730775,
+        "name": "emojiGlass",
+        "url": "https://files.kick.com/emotes/1730775/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 1730776,
+        "name": "emojiGoofy",
+        "url": "https://files.kick.com/emotes/1730776/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 1730782,
+        "name": "emojiGramps",
+        "url": "https://files.kick.com/emotes/1730782/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 1579046,
+        "name": "emojiGrimacing",
+        "url": "https://files.kick.com/emotes/1579046/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 1730785,
+        "name": "emojiGrin",
+        "url": "https://files.kick.com/emotes/1730785/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 1730786,
+        "name": "emojiGrumpy",
+        "url": "https://files.kick.com/emotes/1730786/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 1730787,
+        "name": "emojiHappy",
+        "url": "https://files.kick.com/emotes/1730787/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 1579047,
+        "name": "emojiHeartEyes",
+        "url": "https://files.kick.com/emotes/1579047/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 1730788,
+        "name": "emojiHmm",
+        "url": "https://files.kick.com/emotes/1730788/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 4200908,
+        "name": "emojiHydrate",
+        "url": "https://files.kick.com/emotes/4200908/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 1730789,
+        "name": "emojiKing",
+        "url": "https://files.kick.com/emotes/1730789/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 1730790,
+        "name": "emojiKiss",
+        "url": "https://files.kick.com/emotes/1730790/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 1730791,
+        "name": "emojiLady",
+        "url": "https://files.kick.com/emotes/1730791/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 1579050,
+        "name": "emojiLaughing",
+        "url": "https://files.kick.com/emotes/1579050/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 1730792,
+        "name": "emojiLoading",
+        "url": "https://files.kick.com/emotes/1730792/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 1730794,
+        "name": "emojiLol",
+        "url": "https://files.kick.com/emotes/1730794/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 1730796,
+        "name": "emojiMan",
+        "url": "https://files.kick.com/emotes/1730796/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 1579051,
+        "name": "emojiMoneyEyes",
+        "url": "https://files.kick.com/emotes/1579051/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 1730798,
+        "name": "emojiNo",
+        "url": "https://files.kick.com/emotes/1730798/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 1730799,
+        "name": "emojiOof",
+        "url": "https://files.kick.com/emotes/1730799/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 1730800,
+        "name": "emojiOooh",
+        "url": "https://files.kick.com/emotes/1730800/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 1730802,
+        "name": "emojiOuch",
+        "url": "https://files.kick.com/emotes/1730802/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 1579052,
+        "name": "emojiPleading",
+        "url": "https://files.kick.com/emotes/1579052/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 1730803,
+        "name": "emojiRich",
+        "url": "https://files.kick.com/emotes/1730803/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 1730807,
+        "name": "emojiShocked",
+        "url": "https://files.kick.com/emotes/1730807/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 1730825,
+        "name": "emojiSleep",
+        "url": "https://files.kick.com/emotes/1730825/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 1730827,
+        "name": "emojiSmart",
+        "url": "https://files.kick.com/emotes/1730827/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 1579055,
+        "name": "emojiSmerking",
+        "url": "https://files.kick.com/emotes/1579055/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 1579057,
+        "name": "emojiSmiling",
+        "url": "https://files.kick.com/emotes/1579057/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 1730829,
+        "name": "emojiSorry",
+        "url": "https://files.kick.com/emotes/1730829/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 1730830,
+        "name": "emojiStare",
+        "url": "https://files.kick.com/emotes/1730830/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 1579058,
+        "name": "emojiStarEyes",
+        "url": "https://files.kick.com/emotes/1579058/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 1579059,
+        "name": "emojiSwearing",
+        "url": "https://files.kick.com/emotes/1579059/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 1579061,
+        "name": "emojiUnamused",
+        "url": "https://files.kick.com/emotes/1579061/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 1579062,
+        "name": "emojiVomiting",
+        "url": "https://files.kick.com/emotes/1579062/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 1730831,
+        "name": "emojiWink",
+        "url": "https://files.kick.com/emotes/1730831/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 1579038,
+        "name": "emojiXEyes",
+        "url": "https://files.kick.com/emotes/1579038/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 1730834,
+        "name": "emojiYay",
+        "url": "https://files.kick.com/emotes/1730834/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 1730835,
+        "name": "emojiYes",
+        "url": "https://files.kick.com/emotes/1730835/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 1730839,
+        "name": "emojiYuh",
+        "url": "https://files.kick.com/emotes/1730839/fullsize",
+        "subscribers_only": false
+      },
+      {
+        "id": 1730840,
+        "name": "emojiYum",
+        "url": "https://files.kick.com/emotes/1730840/fullsize",
+        "subscribers_only": false
+      }
+    ]
+  }
+]

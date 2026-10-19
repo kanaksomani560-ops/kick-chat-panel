@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+tls-client
+groq
+google-generativeai
+playwright
