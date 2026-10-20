@@ -59,7 +59,7 @@
     background:rgba(0,0,0,0.15);
     overscroll-behavior:contain;
     scroll-behavior:smooth;
-    contain:paint size layout;
+    min-height:160px;
   }
   .accounts-list::-webkit-scrollbar{width:6px;}
   .accounts-list::-webkit-scrollbar-track{background:rgba(0,0,0,0.2);}
@@ -243,6 +243,27 @@
     }
     .chat-input-wrap .input-row button {
       min-width: 100%;
+    }
+    .accounts-wrap {
+      min-height: 480px !important;
+      overflow: visible !important;
+      display: flex !important;
+      flex-direction: column !important;
+      margin-bottom: 24px !important;
+    }
+    .accounts-list {
+      height: 520px !important;
+      min-height: 420px !important;
+      max-height: 70vh !important;
+      overflow-y: auto !important;
+      -webkit-overflow-scrolling: touch !important;
+      display: block !important;
+      contain: none !important;
+    }
+    .acc-item {
+      height: 44px !important;
+      min-height: 44px !important;
+      content-visibility: visible !important;
     }
 
     /* Mobile Bottom Navigation Bar */
@@ -2077,6 +2098,8 @@ function renderAccounts() {
       accountFilterMode === 'not_following' ? 'All live accounts are following!' : 'No accounts available');
     list.innerHTML = `<div class="empty-msg"><div class="big">NO ACCOUNTS</div><p>${emptyText}</p></div>`;
     if (bar) bar.style.display = 'none';
+    renderQuickAccountChips();
+    updateActiveAccountDisplay();
     return;
   }
   if (bar) bar.style.display = 'flex';
