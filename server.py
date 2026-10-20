@@ -660,11 +660,11 @@ async def ai_generate(req: AIGenerateRequest):
 # ── MULTI-STREAM GLOBAL GIVEAWAY RADAR ──────────────────────────────────────
 RADAR_WATCHLIST_FILE = "radar_watchlist.json"
 DEFAULT_WATCHLIST = [
-    "adinross", "n3on", "trainwreckstv", "roshtein", "cuffem",
-    "cheesur", "westcol", "xqc", "mellstroy", "konvy", "rangesh",
-    "classybeef", "deuceace", "xposed", "ayezee", "corinnakopf",
-    "stevewilldoit", "vitalythegoat", "brutalsimpson", "ac7ionman",
-    "sweatergxd", "fousey", "suspect", "shroud", "drdisrespect"
+    "roshtein", "trainwreckstv", "classybeef", "deuceace", "xposed",
+    "ayezee", "corinnakopf", "adinross", "stevewilldoit", "casinodaddy",
+    "mellstroy", "bidule", "teuf", "brutalsimpson", "ac7ionman",
+    "daskelelele", "yassuo", "m0e_tv", "cheesur", "fadesslots",
+    "fruityslots", "hideousslots", "spintwix", "vitalythegoat", "westcol"
 ]
 
 radar_state = {
@@ -714,10 +714,30 @@ def scan_channel_for_giveaway(ch_slug, session):
             r = session.get(f"https://kick.com/api/v2/channels/{ch_slug}", timeout_seconds=6)
             if r.status_code == 200:
                 d = r.json()
-                is_live = d.get("livestream") is not None
+                livestream = d.get("livestream")
+                is_live = livestream is not None
+                is_slots = False
+                subcat_name = "Offline"
+                if is_live and livestream:
+                    for c in livestream.get("categories", []):
+                        slug = (c.get("slug") or "").lower()
+                        name = (c.get("name") or "").lower()
+                        parent = (c.get("category", {}).get("name") or "").lower()
+                        if "slot" in slug or "slot" in name or "casino" in name or "gambl" in parent:
+                            is_slots = True
+                            subcat_name = c.get("name") or "Slots & Casino"
+                            break
+
                 ch_id = d.get("id")
                 room_id = d.get("chatroom", {}).get("id")
-                cache = {"id": ch_id, "chatroom_id": room_id, "is_live": is_live, "last_checked": now}
+                # Strictly monitor Slots & Casino livestreams
+                cache = {
+                    "id": ch_id, 
+                    "chatroom_id": room_id, 
+                    "is_live": is_live and is_slots,
+                    "category": subcat_name,
+                    "last_checked": now
+                }
                 radar_state["channel_cache"][ch_slug] = cache
             else:
                 return
