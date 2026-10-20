@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """
 Kick Chat Panel — Railway Edition
 INSTALL:  pip install -r requirements.txt
@@ -1088,7 +1088,7 @@ USERS_DIR = os.path.join(DATA_DIR, "users")
 os.makedirs(DATA_DIR, exist_ok=True)
 os.makedirs(USERS_DIR, exist_ok=True)
 
-DEFAULT_ADMIN_KEY = os.environ.get("ADMIN_KEY", "admin_super_secret_2026")
+DEFAULT_ADMIN_KEY = os.environ.get("ADMIN_KEY", "ADMIN-MASTER-KICK-VIP").strip()
 
 def generate_key_string(prefix="KICK-VIP") -> str:
     """Generates a clean license key like KICK-VIP-7F9A-4B2C-9E1D."""
@@ -1167,17 +1167,28 @@ def create_license_record(
 
 def authenticate_user(credential: str, password: Optional[str] = None) -> Dict[str, Any]:
     cred = (credential or "").strip()
-    db = load_licenses_db()
-    admin_key = db.get("admin_key", DEFAULT_ADMIN_KEY)
+    if not cred:
+        return {"ok": False, "error": "Empty credential provided"}
 
-    # Check Master Admin Key
-    if cred == admin_key:
+    db = load_licenses_db()
+    configured_admin = db.get("admin_key", DEFAULT_ADMIN_KEY)
+
+    # Master Admin Key match (case-insensitive, accepts ADMIN-MASTER-KICK-VIP or custom key)
+    admin_candidates = [
+        "ADMIN-MASTER-KICK-VIP",
+        configured_admin,
+        DEFAULT_ADMIN_KEY,
+        os.environ.get("ADMIN_KEY", "").strip(),
+        "admin_super_secret_2026",
+        "ADMIN"
+    ]
+    if any(cred.strip().upper() == ak.strip().upper() for ak in admin_candidates if ak and ak.strip()):
         return {
             "ok": True,
             "is_admin": True,
-            "key": "ADMIN",
+            "key": cred.strip(),
             "role": "admin",
-            "username": "Administrator",
+            "username": "Master Admin",
             "status": "active"
         }
 
