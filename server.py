@@ -661,7 +661,10 @@ async def ai_generate(req: AIGenerateRequest):
 RADAR_WATCHLIST_FILE = "radar_watchlist.json"
 DEFAULT_WATCHLIST = [
     "adinross", "n3on", "trainwreckstv", "roshtein", "cuffem",
-    "cheesur", "westcol", "xqc", "mellstroy", "konvy", "rangesh"
+    "cheesur", "westcol", "xqc", "mellstroy", "konvy", "rangesh",
+    "classybeef", "deuceace", "xposed", "ayezee", "corinnakopf",
+    "stevewilldoit", "vitalythegoat", "brutalsimpson", "ac7ionman",
+    "sweatergxd", "fousey", "suspect", "shroud", "drdisrespect"
 ]
 
 radar_state = {
@@ -799,19 +802,17 @@ def auto_enter_giveaway(chatroom_id, channel, keyword, tokens):
         time.sleep(0.35)
 
 def radar_background_loop():
+    from concurrent.futures import ThreadPoolExecutor
     session = make_session()
     while True:
         try:
             if radar_state["enabled"]:
                 watchlist = list(radar_state["watchlist"])
-                for ch in watchlist:
-                    if not radar_state["enabled"]:
-                        break
-                    scan_channel_for_giveaway(ch, session)
-                    time.sleep(0.3)
-            time.sleep(2)
+                with ThreadPoolExecutor(max_workers=8) as ex:
+                    list(ex.map(lambda ch: scan_channel_for_giveaway(ch, session), watchlist))
+            time.sleep(1.5)
         except Exception:
-            time.sleep(3)
+            time.sleep(2.5)
 
 threading.Thread(target=radar_background_loop, daemon=True).start()
 
@@ -838,10 +839,12 @@ class RadarWatchlistRequest(BaseModel):
 @app.post("/api/radar/watchlist")
 async def update_radar_watchlist(req: RadarWatchlistRequest):
     if req.action == "add" and req.channel:
-        ch = req.channel.strip().lower().replace("#", "")
-        if ch and ch not in radar_state["watchlist"]:
-            radar_state["watchlist"].append(ch)
-            save_radar_state()
+        raw = req.channel.replace(",", " ").replace("\n", " ")
+        names = [x.strip().lower().replace("#", "") for x in raw.split() if x.strip()]
+        for ch in names:
+            if ch and ch not in radar_state["watchlist"]:
+                radar_state["watchlist"].append(ch)
+        save_radar_state()
     elif req.action == "remove" and req.channel:
         ch = req.channel.strip().lower().replace("#", "")
         if ch in radar_state["watchlist"]:
