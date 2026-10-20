@@ -1864,15 +1864,26 @@ function triggerTitleAlert(evt) {
   if (navigator.vibrate) navigator.vibrate([300, 150, 300, 150, 600]);
 
   const viewersStr = evt.viewers >= 1000 ? (evt.viewers / 1000).toFixed(1) + 'k' : evt.viewers;
+  const isRaffle = evt.event_type === 'raffle';
 
   if (window.Notification && Notification.permission === 'granted') {
-    new Notification(`🎯 ${evt.matched_keyword} on @${evt.slug}!`, {
-      body: `"${evt.title}" (${viewersStr} viewers)`
-    });
+    if (isRaffle) {
+      new Notification(`🎁 KEYWORD RAFFLE on @${evt.slug}!`, {
+        body: `Keyword: ${evt.keyword} (${viewersStr} viewers)`
+      });
+    } else {
+      new Notification(`🎯 ${evt.matched_keyword} on @${evt.slug}!`, {
+        body: `"${evt.title}" (${viewersStr} viewers)`
+      });
+    }
   }
 
   showTitleAlertBanner(evt);
-  addBotLog(`🎯 [TITLE ALERT] @${evt.slug} is running a ${evt.matched_keyword}! "${evt.title}" (${viewersStr} viewers)`, 'success');
+  if (isRaffle) {
+    addBotLog(`🎁 [RAFFLE ALERT] @${evt.slug} started a Raffle! KW: "${evt.keyword}" from @${evt.sender || 'bot'} (${viewersStr} viewers)`, 'success');
+  } else {
+    addBotLog(`🎯 [TITLE ALERT] @${evt.slug} is running a ${evt.matched_keyword}! "${evt.title}" (${viewersStr} viewers)`, 'success');
+  }
 }
 
 function showTitleAlertBanner(evt) {
@@ -1884,12 +1895,40 @@ function showTitleAlertBanner(evt) {
   const linkEl = document.getElementById('bannerWatchLink');
 
   const viewersStr = evt.viewers >= 1000 ? (evt.viewers / 1000).toFixed(1) + 'k' : evt.viewers;
+  const isRaffle = evt.event_type === 'raffle';
 
   if (chEl) chEl.textContent = `@${evt.slug}`;
-  if (titleEl) titleEl.textContent = evt.title;
-  if (badgeEl) badgeEl.textContent = evt.matched_keyword || 'BONUS HUNT';
   if (viewersEl) viewersEl.textContent = `${viewersStr} viewers`;
-  if (linkEl) linkEl.href = evt.url || `https://kick.com/${evt.slug}`;
+
+  if (isRaffle) {
+    if (badgeEl) {
+      badgeEl.textContent = '🎁 KEYWORD RAFFLE';
+      badgeEl.style.background = '#f59e0b';
+    }
+    if (titleEl) {
+      titleEl.innerHTML = `KW: <b style="color:#00ff88;font-family:var(--mono);font-size:13px;">${escapeHtml(evt.keyword)}</b> <span style="font-size:10px;color:var(--muted);">${escapeHtml(evt.content || '')}</span>`;
+    }
+    if (linkEl) {
+      if (evt.giveaway_url) {
+        linkEl.href = evt.giveaway_url;
+        linkEl.innerHTML = '🔗 OPEN GIVEAWAY PAGE';
+      } else {
+        linkEl.href = evt.url || `https://kick.com/${evt.slug}`;
+        linkEl.innerHTML = '📺 WATCH STREAM';
+      }
+    }
+  } else {
+    if (badgeEl) {
+      badgeEl.textContent = evt.matched_keyword || 'BONUS HUNT';
+      badgeEl.style.background = '#10b981';
+    }
+    if (titleEl) titleEl.textContent = evt.title;
+    if (linkEl) {
+      linkEl.href = evt.url || `https://kick.com/${evt.slug}`;
+      linkEl.innerHTML = '📺 WATCH STREAM';
+    }
+  }
+
   if (banner) banner.style.display = 'block';
 
   const box = document.getElementById('radarLastDetectedBox');
@@ -1901,11 +1940,33 @@ function showTitleAlertBanner(evt) {
   const rTime = document.getElementById('radarDetectedTime');
 
   if (rCh) rCh.textContent = `@${evt.slug}`;
-  if (rTitle) rTitle.textContent = evt.title;
-  if (rBadge) rBadge.textContent = evt.matched_keyword || 'BONUS HUNT';
   if (rViewers) rViewers.textContent = `${viewersStr} viewers`;
-  if (rWatch) rWatch.href = evt.url || `https://kick.com/${evt.slug}`;
   if (rTime) rTime.textContent = evt.time || 'Just now';
+
+  if (isRaffle) {
+    if (rBadge) {
+      rBadge.textContent = '🎁 RAFFLE';
+      rBadge.style.background = '#f59e0b';
+    }
+    if (rTitle) {
+      rTitle.innerHTML = `Keyword: <b style="color:#00ff88;font-family:var(--mono);">${escapeHtml(evt.keyword)}</b>`;
+    }
+    if (rWatch) {
+      rWatch.href = evt.giveaway_url || evt.url || `https://kick.com/${evt.slug}`;
+      rWatch.innerHTML = evt.giveaway_url ? '🔗 PAGE' : '📺 WATCH';
+    }
+  } else {
+    if (rBadge) {
+      rBadge.textContent = evt.matched_keyword || 'BONUS HUNT';
+      rBadge.style.background = '#10b981';
+    }
+    if (rTitle) rTitle.textContent = evt.title;
+    if (rWatch) {
+      rWatch.href = evt.url || `https://kick.com/${evt.slug}`;
+      rWatch.innerHTML = '📺 WATCH';
+    }
+  }
+
   if (box) box.style.display = 'block';
 }
 

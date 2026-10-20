@@ -657,7 +657,7 @@ async def ai_generate(req: AIGenerateRequest):
 
 
 
-# ── [SLOTS & CASINO] STREAM TITLE RADAR (BONUS HUNT / TOURNAMENT / BATTLE) ──
+# ── [SLOTS & CASINO] RADAR (TITLE HUNTS + KEYWORD RAFFLES & GIVEAWAY BOT PAGES) ──
 RADAR_WATCHLIST_FILE = "radar_watchlist.json"
 DEFAULT_TITLE_KEYWORDS = [
     "bonus hunt", "hunt", "tourney", "tournament", "bonus buy battle", "buy battle"
@@ -677,6 +677,7 @@ radar_state = {
     "watchlist": list(DEFAULT_WATCHLIST),
     "live_slots_streamers": {},  # slug -> {channel_id, slug, username, viewers, title, profile_pic, matched_keyword}
     "notified_stream_titles": set(),  # deduplication set: f"{slug}_{title.lower()}"
+    "processed_raffle_msg_ids": set(),  # deduplication set for chat raffle messages
     "events": [],
     "last_discovery_time": 0
 }
@@ -707,13 +708,69 @@ def save_radar_state():
 
 load_radar_state()
 
+# ── RAFFLE & GIVEAWAY BOT PAGE DETECTOR ─────────────────────────────────────
+GIVEAWAY_URL_PATTERNS = [
+    re.compile(r'https?://(?:www\.)?botrix\.live/(?:c/[^/\s]+/giveaway|giveaway[^\s]*)', re.I),
+    re.compile(r'https?://(?:www\.)?kickbot\.(?:app|com)/(?:g/[^/\s]+|giveaway[^\s]*)', re.I),
+    re.compile(r'https?://(?:www\.)?wheelofnames\.com/[^\s]+', re.I),
+    re.compile(r'https?://(?:www\.)?pickerwheel\.com/[^\s]+', re.I),
+    re.compile(r'https?://(?:www\.)?giveaway\.zone/[^\s]+', re.I),
+    re.compile(r'https?://(?:www\.)?app-sorteos\.com/[^\s]+', re.I),
+    re.compile(r'https?://(?:www\.)?rafflys\.com/[^\s]+', re.I)
+]
+
+RAFFLE_PATTERNS = [
+    re.compile(r"""\b(?:keyword|palabra\s+clave|kw|passphrase|secret\s+word)\s*(?:is|es|[:=\-])\s*["']?([!#$]?[a-zA-Z0-9_\-]+)""", re.I),
+    re.compile(r"""(?:giveaway|sorteo|raffle).*(?:type|escribe|escribir|send|enter\s+with)\s*["']?([!#$]?[a-zA-Z0-9_\-]+)""", re.I),
+    re.compile(r"""([!#$][a-zA-Z0-9_\-]+)\s*(?:to\s+(?:enter|join|participate|win)|para\s+participar)\s*(?:the\s+)?(?:giveaway|sorteo|raffle)""", re.I),
+    re.compile(r"""(?:new\s+giveaway|sorteo\s+activo|raffle\s+(?:started|active|open))\s*[:=\-]?\s*["']?([!#$]?[a-zA-Z0-9_\-]+)""", re.I),
+    re.compile(r"""(?:type|escribe)\s+([!#$][a-zA-Z0-9_\-]+)\s+(?:for|para)\s+(?:the\s+)?(?:\$[\d,]+|\d+\$|free)?\s*(?:giveaway|sorteo|raffle)""", re.I)
+]
+
+FALSE_POSITIVE_PHRASES = [
+    "reached level", "points", "puntos", "level up", "rank", "command list",
+    "commands:", "commands list", "follow baked on ig", "instagram.com",
+    "tiktok.com", "clip_", "avoid insults", "evita insultos", "te agradece",
+    "thank you for following", "0 point", "earn points by chatting"
+]
+
+def parse_raffle_announcement(content, sender="botrix"):
+    content_clean = (content or "").strip()
+    c_lower = content_clean.lower()
+    for fp in FALSE_POSITIVE_PHRASES:
+        if fp in c_lower:
+            return None
+
+    gw_url = None
+    for upat in GIVEAWAY_URL_PATTERNS:
+        m = upat.search(content_clean)
+        if m:
+            gw_url = m.group(0)
+            break
+
+    kw = None
+    for kpat in RAFFLE_PATTERNS:
+        m = kpat.search(content_clean)
+        if m:
+            cand = m.group(1).strip()
+            if cand.lower() not in ("the", "to", "in", "for", "a", "an", "is", "of", "and", "chat"):
+                kw = cand
+                break
+
+    if not kw and not gw_url:
+        return None
+
+    return {
+        "keyword": kw or gw_url,
+        "giveaway_url": gw_url
+    }
+
 def match_title_keywords(title: str, keywords=None) -> Optional[str]:
     """Matches stream title against target casino keywords like bonus hunt, tourney, bonus buy battle."""
     if not title:
         return None
     t_lower = title.lower()
 
-    # High-priority exact matches
     if "bonus buy battle" in t_lower or "buy battle" in t_lower or "bonus battle" in t_lower:
         return "Bonus Buy Battle"
     if "bonus hunt" in t_lower:
@@ -723,7 +780,6 @@ def match_title_keywords(title: str, keywords=None) -> Optional[str]:
     if re.search(r'\bhunt(?:s|ing)?\b', t_lower):
         return "Hunt"
 
-    # Dynamic / custom keywords
     kws = keywords if keywords is not None else radar_state.get("title_keywords", DEFAULT_TITLE_KEYWORDS)
     for kw in kws:
         k_clean = kw.strip().lower()
@@ -786,8 +842,67 @@ def fetch_live_slots_streamers(max_streams=250):
             break
     return discovered
 
-def scan_slots_titles_cycle():
-    """Scans all live Slots & Casino streams for bonus hunt / tourney / battle in their titles."""
+def scan_channel_raffle_chat(s, session, now):
+    """Scans a channel chatroom specifically for keyword raffle starts and giveaway bot page links."""
+    ch_id = s.get("channel_id")
+    slug = s.get("slug")
+    if not ch_id or not slug:
+        return
+
+    try:
+        mr = session.get(f"https://kick.com/api/v2/channels/{ch_id}/messages", timeout=4)
+        if mr.status_code != 200:
+            return
+        msgs = mr.json().get("data", {}).get("messages", [])
+
+        for m in reversed(msgs):
+            mid = m.get("id")
+            if not mid or mid in radar_state["processed_raffle_msg_ids"]:
+                continue
+            radar_state["processed_raffle_msg_ids"].add(mid)
+            if len(radar_state["processed_raffle_msg_ids"]) > 1500:
+                first = next(iter(radar_state["processed_raffle_msg_ids"]))
+                radar_state["processed_raffle_msg_ids"].remove(first)
+
+            sender = (m.get("sender", {}).get("username") or "").lower()
+            content = m.get("content") or ""
+            badges = [b.get("type") for b in m.get("sender", {}).get("identity", {}).get("badges", [])]
+
+            is_bot = any(b in sender for b in ["bot", "rix", "streamer", "streamelements", "nightbot", "livebot"])
+            is_streamer = sender == slug.lower()
+            is_mod_or_vip = any(b in badges for b in ["moderator", "broadcaster", "vip", "og_vip"])
+
+            if is_bot or is_streamer or is_mod_or_vip:
+                res = parse_raffle_announcement(content, sender)
+                if res:
+                    kw = res["keyword"]
+                    gw_url = res.get("giveaway_url")
+                    evt = {
+                        "id": f"raffle_{slug}_{mid}",
+                        "event_type": "raffle",
+                        "streamer": s.get("username") or slug,
+                        "slug": slug,
+                        "channel": slug,
+                        "keyword": kw,
+                        "giveaway_url": gw_url,
+                        "sender": sender,
+                        "content": content,
+                        "viewers": s.get("viewers", 0),
+                        "url": f"https://kick.com/{slug}",
+                        "time": time.strftime("%H:%M:%S"),
+                        "timestamp": int(now)
+                    }
+                    radar_state["events"].insert(0, evt)
+                    radar_state["events"] = radar_state["events"][:40]
+                    try:
+                        print(f"[RADAR] [RAFFLE ALERT] @{slug} ({s.get('viewers', 0)} viewers) -> KW: '{kw}' from @{sender}")
+                    except Exception:
+                        pass
+    except Exception:
+        pass
+
+def scan_slots_radar_cycle():
+    """Scans all live Slots & Casino streams for bonus hunts/tournaments in titles AND live keyword raffles in chat."""
     if not radar_state.get("enabled"):
         return
 
@@ -802,7 +917,7 @@ def scan_slots_titles_cycle():
         s["matched_keyword"] = matched_kw
         st_map[slug] = s
 
-        # If title matches target keyword, trigger notification event
+        # Check title keywords
         if matched_kw:
             dedup_key = f"{slug}_{title.strip().lower()}"
             if dedup_key not in radar_state["notified_stream_titles"]:
@@ -812,7 +927,8 @@ def scan_slots_titles_cycle():
                     radar_state["notified_stream_titles"].remove(first)
 
                 evt = {
-                    "id": f"{slug}_{int(now)}",
+                    "id": f"title_{slug}_{int(now)}",
+                    "event_type": "title",
                     "streamer": s.get("username") or slug,
                     "slug": slug,
                     "channel": slug,
@@ -834,12 +950,24 @@ def scan_slots_titles_cycle():
     radar_state["live_slots_streamers"] = st_map
     radar_state["last_discovery_time"] = int(now)
 
+    # Parallel chat scan for keyword raffles & giveaway bot pages on active channels
+    active_channels = [s for s in streams if s.get("viewers", 0) >= 3][:45]
+    if active_channels:
+        from concurrent.futures import ThreadPoolExecutor
+        session = requests.Session()
+        session.headers.update({
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            'Accept': 'application/json'
+        })
+        with ThreadPoolExecutor(max_workers=10) as ex:
+            list(ex.map(lambda s: scan_channel_raffle_chat(s, session, now), active_channels))
+
 def slots_title_radar_worker():
-    """Background thread running title scan every 20 seconds."""
+    """Background thread running radar scan every 18 seconds."""
     while True:
         try:
-            scan_slots_titles_cycle()
-            time.sleep(20)
+            scan_slots_radar_cycle()
+            time.sleep(18)
         except Exception as e:
             time.sleep(15)
 
@@ -848,7 +976,6 @@ threading.Thread(target=slots_title_radar_worker, daemon=True).start()
 @app.get("/api/radar/status")
 async def get_radar_status():
     discovered = list(radar_state.get("live_slots_streamers", {}).values())
-    # Sort: matched streams first, then by viewers desc
     discovered.sort(key=lambda x: (1 if x.get("matched_keyword") else 0, x.get("viewers", 0)), reverse=True)
     matched_count = sum(1 for s in discovered if s.get("matched_keyword"))
     live_channels = [
@@ -871,14 +998,14 @@ async def get_radar_status():
         "matched_count": matched_count,
         "watchlist": radar_state["watchlist"],
         "live_channels": live_channels,
-        "events": radar_state["events"][:20],
+        "events": radar_state["events"][:25],
         "last_discovery_time": radar_state.get("last_discovery_time", 0)
     }
 
 @app.post("/api/radar/refresh_slots")
 async def refresh_slots_streamers():
     try:
-        scan_slots_titles_cycle()
+        scan_slots_radar_cycle()
         return {
             "ok": True,
             "count": len(radar_state.get("live_slots_streamers", {})),
