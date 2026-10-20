@@ -565,7 +565,7 @@ async def send_message(req: SendRequest):
                          json={"content": content, "type": "message"}, timeout_seconds=10)
         print(f"[SEND] response status={r.status_code}")
         if r.status_code in (200, 201): 
-            print(f"[SEND] ✓ Message sent")
+            print("[SEND] [OK] Message sent")
             return {"ok": True}
         if r.status_code == 429: return {"ok": False, "error": "Rate limited"}
         if r.status_code == 401: return {"ok": False, "error": "Token invalid"}
@@ -1601,7 +1601,6 @@ async def get_emotes(channel: str = ""):
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
-    print(f"\n  Kick Chat Panel — Railway Edition")
+    print(f"\n  Kick Chat Panel - Railway Edition")
     print(f"  Running on port {port}\n")
-    uvicorn.run("server:app", host="0.0.0.0", port=port, reload=False)
-
+    uvicorn.run(app, host="0.0.0.0", port=port)

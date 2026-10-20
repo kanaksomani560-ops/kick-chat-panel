@@ -1,6 +1,7 @@
 fastapi
 uvicorn
 tls-client
+requests
 groq
 google-generativeai
 playwright
