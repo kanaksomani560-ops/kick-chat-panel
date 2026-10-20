@@ -1050,28 +1050,30 @@
 </head>
 <body>
 
-<!-- FLOATING GIVEAWAY ALERT BANNER -->
-<div id="giveawayAlertBanner" class="giveaway-banner" style="display:none;">
-  <div class="giveaway-banner-content">
-    <div style="display:flex;align-items:center;gap:10px;">
-      <div class="giveaway-pulse-icon">🎁</div>
-      <div>
-        <div style="font-size:10px;font-weight:800;color:#ff5733;letter-spacing:1px;text-transform:uppercase;">
-          🎰 SLOTS & CASINO GIVEAWAY ON <span id="bannerChannel" style="color:#00a8ff;text-decoration:underline;">#STREAMER</span>!
+<!-- FLOATING TITLE ALERT BANNER (BONUS HUNT / TOURNAMENT / BATTLE) -->
+<div id="giveawayAlertBanner" class="giveaway-banner" style="display:none;background:linear-gradient(135deg,#0a192f,#141e30);border:1px solid #10b981;box-shadow:0 10px 30px rgba(0,0,0,0.85);z-index:99999;">
+  <div class="giveaway-banner-content" style="display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;">
+    <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+      <div style="font-size:24px;" id="bannerBadgeIcon">🎰</div>
+      <div style="min-width:0;">
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+          <span style="font-size:9.5px;font-weight:900;background:#10b981;color:#000;padding:2px 7px;border-radius:5px;letter-spacing:0.8px;text-transform:uppercase;" id="bannerBadgeText">BONUS HUNT</span>
+          <span style="font-size:13px;font-weight:800;color:#00a8ff;" id="bannerChannel">@streamer</span>
+          <span style="font-size:10px;color:var(--muted);" id="bannerViewers">14.2k viewers</span>
         </div>
-        <div style="font-size:13px;font-weight:900;color:#fff;margin-top:2px;">
-          Keyword: <span style="color:#00ff88;font-family:var(--mono);background:rgba(0,255,136,0.15);padding:2px 8px;border-radius:6px;" id="bannerKeyword">!ticket</span>
-          <span style="font-size:10px;color:var(--muted);margin-left:6px;" id="bannerSender">from @botrix</span>
+        <div style="font-size:11.5px;font-weight:600;color:#fff;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:500px;" id="bannerTitle">
+          Stream title here...
         </div>
       </div>
     </div>
-    <div style="display:flex;align-items:center;gap:8px;">
-      <button class="btn btn-green" id="bannerEnterBtn" onclick="enterDetectedGiveaway()" style="font-size:11px;padding:8px 14px;font-weight:800;box-shadow:0 0 15px rgba(0,255,136,0.4);">⚡ ENTER ALL ACCOUNTS</button>
+    <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+      <a id="bannerWatchLink" href="https://kick.com" target="_blank" class="btn btn-green" style="font-size:11px;padding:8px 14px;font-weight:800;text-decoration:none;display:inline-flex;align-items:center;gap:4px;box-shadow:0 0 15px rgba(16,185,129,0.4);">
+        📺 WATCH STREAM
+      </a>
       <button class="btn btn-dark" onclick="dismissGiveawayAlert()" style="padding:8px 10px;font-size:11px;min-width:32px;">✕</button>
     </div>
   </div>
 </div>
-
 
 <header>
   <div class="dot"></div>
@@ -1140,32 +1142,41 @@
       </div>
     </div>
 
-    <!-- 🎁 BOTRIX GIVEAWAY RADAR (EVERYWHERE SCANNER) -->
+    <!-- 🎰 [SLOTS & CASINO] STREAM TITLE RADAR -->
     <div class="section" style="background:#0d1116;border-left:2px solid #10b981;">
       <div style="display:flex;align-items:center;justify-content:space-between;">
-        <div class="section-title" style="color:#10b981;margin-bottom:0;">🎰 [Slots & Casino] Giveaway Radar</div>
+        <div class="section-title" style="color:#10b981;margin-bottom:0;">🎰 [Slots & Casino] Title Radar</div>
         <span class="radar-status-dot active" id="radarStatusDot" title="Radar Active"></span>
       </div>
-      <div style="font-size:10px;color:var(--muted);margin-top:4px;">Exclusively tracks Slots & Casino streams 24/7. Auto-detects BotRix balance drops, raffle keywords & rolls across ALL live casino streams with sound siren & push alerts.</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:4px;">Monitors all live Slots & Casino streams 24/7. Triggers audio chime, phone vibration & push notifications when any streamer runs a <b>Bonus Hunt</b>, <b>Hunt</b>, <b>Tournament / Tourney</b>, or <b>Bonus Buy Battle</b>!</div>
 
       <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px;">
-        <label style="display:flex;align-items:center;gap:8px;font-size:11px;color:#00ffcc;cursor:pointer;">
-          <input type="checkbox" id="autoDiscoverSlotsToggle" checked onchange="toggleAutoDiscoverSlots(this.checked)" style="width:15px;height:15px;cursor:pointer;" />
-          <b>🌐 Auto-Discover ALL Live Slots & Casino Streams (Auto-Track 150+ Channels)</b>
-        </label>
-
         <label style="display:flex;align-items:center;gap:8px;font-size:11px;color:#fff;cursor:pointer;">
           <input type="checkbox" id="giveawayRadarToggle" checked onchange="toggleGiveawayRadar(this.checked)" style="width:15px;height:15px;cursor:pointer;" />
-          <b>Enable Slots & Casino Radar (Sound Siren + Mobile Vibration)</b>
+          <b>Enable Title Radar (Audio Siren + Mobile Vibration + Push Alerts)</b>
         </label>
-        
-        <label style="display:flex;align-items:center;gap:8px;font-size:11px;color:#ffb199;cursor:pointer;">
-          <input type="checkbox" id="autoEnterGiveawayToggle" onchange="toggleAutoEnter(this.checked)" style="width:15px;height:15px;cursor:pointer;" />
-          <b>⚡ Auto-Enter Slots Giveaways (Instant with All Accounts)</b>
+        <label style="display:flex;align-items:center;gap:8px;font-size:11px;color:#00ffcc;cursor:pointer;">
+          <input type="checkbox" id="autoDiscoverSlotsToggle" checked onchange="toggleAutoDiscoverSlots(this.checked)" style="width:15px;height:15px;cursor:pointer;" />
+          <b>🌐 Auto-Discover ALL Live Slots & Casino Streams (~150-250 Channels)</b>
         </label>
       </div>
 
-      <!-- Watched Streamers Chips & Add Streamer -->
+      <!-- Keywords Chips & Add Keyword -->
+      <div style="margin-top:10px;padding:8px 10px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <span style="font-size:9px;color:var(--muted);letter-spacing:0.8px;font-weight:700;">ACTIVE TITLE KEYWORDS:</span>
+          <span class="clickable-link" onclick="resetRadarKeywords()" style="font-size:9px;color:#38bdf8;">Reset Defaults</span>
+        </div>
+        <div id="radarKeywordsChips" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px;">
+          <!-- Dynamically populated with keyword chips -->
+        </div>
+        <div style="display:flex;gap:6px;">
+          <input type="text" id="newKeywordInput" placeholder="Add custom keyword e.g. giveaway, raffle, bonus buy..." style="flex:1;padding:5px 8px;font-size:10.5px;border-radius:8px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.05);color:#fff;" onkeypress="if(event.key==='Enter')addKeywordToRadar()"/>
+          <button class="btn btn-green" onclick="addKeywordToRadar()" style="padding:5px 10px;font-size:9.5px;border-radius:8px;font-weight:700;">+ ADD</button>
+        </div>
+      </div>
+
+      <!-- Monitored Streams & Status -->
       <div style="margin-top:10px;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
           <span style="font-size:9.5px;color:var(--muted);letter-spacing:0.8px;font-weight:700;">MONITORED STREAMS:</span>
@@ -1174,12 +1185,8 @@
             <button class="btn btn-dark" id="radarRefreshBtn" onclick="refreshSlotsRadar()" style="font-size:8.5px;padding:2px 7px;min-height:20px;border-radius:6px;">🔄 Refresh</button>
           </div>
         </div>
-        <div id="radarStreamersChips" style="display:flex;flex-wrap:wrap;gap:4px;max-height:95px;overflow-y:auto;padding-bottom:2px;">
+        <div id="radarStreamersChips" style="display:flex;flex-wrap:wrap;gap:4px;max-height:105px;overflow-y:auto;padding-bottom:2px;">
           <!-- Populated dynamically with live casino streamers chips -->
-        </div>
-        <div style="display:flex;gap:6px;margin-top:8px;">
-          <input type="text" id="newRadarStreamerInput" placeholder="Add custom streamer(s) e.g. roshtein, classybeef, xposed..." style="flex:1;padding:6px 10px;font-size:11px;border-radius:10px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.05);color:#fff;" onkeypress="if(event.key==='Enter')addStreamerToRadar()"/>
-          <button class="btn btn-green" onclick="addStreamerToRadar()" style="padding:6px 12px;font-size:10px;min-height:30px;border-radius:10px;font-weight:700;">+ ADD</button>
         </div>
       </div>
 
@@ -1188,20 +1195,25 @@
         <button class="btn btn-dark" onclick="requestNotificationPerm()" style="flex:1;font-size:9.5px;padding:6px 4px;">🔔 Enable Push Noti</button>
       </div>
 
-      <div id="radarLastDetectedBox" style="margin-top:10px;padding:8px 10px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.25);border-radius:10px;display:none;">
+      <!-- Last Detected Match Box -->
+      <div id="radarLastDetectedBox" style="margin-top:10px;padding:10px 12px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.25);border-radius:12px;display:none;">
         <div style="display:flex;justify-content:space-between;align-items:center;">
-          <span style="font-size:9.5px;color:var(--muted);letter-spacing:0.5px;">LAST DETECTED GIVEAWAY:</span>
+          <span style="font-size:9.5px;color:var(--muted);letter-spacing:0.5px;">LATEST MATCHED STREAM:</span>
           <span style="font-size:9px;color:#10b981;font-weight:700;" id="radarDetectedTime">Just now</span>
         </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">
-          <div>
-            <span style="font-size:12px;font-weight:700;color:#00a8ff;" id="radarChannelText">#channel</span>:
-            <span style="font-size:13px;font-weight:900;color:#00ff88;font-family:var(--mono);" id="radarKeywordText">!ticket</span>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;gap:8px;">
+          <div style="min-width:0;">
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+              <span id="radarKeywordBadge" style="font-size:9px;font-weight:800;background:#10b981;color:#000;padding:1px 6px;border-radius:4px;">BONUS HUNT</span>
+              <span style="font-size:12px;font-weight:800;color:#00a8ff;" id="radarChannelText">@channel</span>
+              <span style="font-size:9.5px;color:var(--muted);" id="radarViewersText">0 viewers</span>
+            </div>
+            <div style="font-size:11px;color:#fff;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px;" id="radarTitleText">Stream title...</div>
           </div>
-          <button class="btn btn-green" id="radarEnterBtn" onclick="enterDetectedGiveaway()" style="font-size:10px;padding:5px 10px;font-weight:800;">⚡ ENTER NOW</button>
+          <a id="radarWatchBtn" href="https://kick.com" target="_blank" class="btn btn-green" style="font-size:10px;padding:6px 12px;font-weight:800;text-decoration:none;flex-shrink:0;">📺 WATCH</a>
         </div>
       </div>
-      <div class="sline" id="radarStatusText" style="margin-top:6px;font-size:10px;color:var(--muted);">🟢 Slots & Casino Radar Active — Auto-discovering & scanning all live casino streams</div>
+      <div class="sline" id="radarStatusText" style="margin-top:6px;font-size:10px;color:var(--muted);">🟢 Title Radar Active — Monitoring all live Slots & Casino streams 24/7</div>
     </div>
 
     <div class="accounts-wrap">
@@ -1638,7 +1650,6 @@ async function syncRadarStatus() {
     const liveCountEl = document.getElementById('radarLiveCount');
     const autoDiscoverToggle = document.getElementById('autoDiscoverSlotsToggle');
     const radarToggle = document.getElementById('giveawayRadarToggle');
-    const autoEnterToggle = document.getElementById('autoEnterGiveawayToggle');
     const statusText = document.getElementById('radarStatusText');
     const dot = document.getElementById('radarStatusDot');
 
@@ -1650,28 +1661,26 @@ async function syncRadarStatus() {
     if (radarToggle && document.activeElement !== radarToggle) {
       radarToggle.checked = d.enabled !== false;
     }
-    if (autoEnterToggle && document.activeElement !== autoEnterToggle) {
-      autoEnterToggle.checked = d.auto_enter === true;
-    }
+
+    renderRadarKeywords(d.title_keywords || []);
 
     const liveStreams = d.live_channels || [];
+    const matchedCount = d.matched_count || 0;
     if (liveCountEl) {
-      if (d.auto_discover_slots !== false) {
-        liveCountEl.textContent = `🟢 ${liveStreams.length} Live Casino Streams`;
+      if (matchedCount > 0) {
+        liveCountEl.textContent = `🎯 ${matchedCount} Active | 🟢 ${liveStreams.length} Live Casino Streams`;
       } else {
-        const liveMap = new Map(liveStreams.map(c => [c.slug, c.is_live]));
-        const liveCount = (d.watchlist || []).filter(w => liveMap.get(w)).length;
-        liveCountEl.textContent = `${liveCount} Live / ${d.watchlist.length} Total`;
+        liveCountEl.textContent = `🟢 ${liveStreams.length} Live Casino Streams`;
       }
     }
 
     if (statusText) {
       if (!d.enabled) {
-        statusText.textContent = '⚪ Slots Radar Paused';
-      } else if (d.auto_discover_slots !== false) {
-        statusText.textContent = `🟢 Auto-Scanning ${liveStreams.length} Live Slots & Casino Streams 24/7 for BotRix Giveaways`;
+        statusText.textContent = '⚪ Slots Title Radar Paused';
+      } else if (matchedCount > 0) {
+        statusText.textContent = `🎯 Title Radar Active — ${matchedCount} Streamer(s) currently running Bonus Hunts/Tournaments!`;
       } else {
-        statusText.textContent = `🟢 Scanning ${d.watchlist.length} Custom Watched Channels for BotRix Giveaways`;
+        statusText.textContent = `🟢 Title Radar Active — Scanning ${liveStreams.length} live casino streams for Bonus Hunts/Tournaments`;
       }
     }
 
@@ -1681,9 +1690,67 @@ async function syncRadarStatus() {
       const latest = d.events[0];
       if (!processedGiveawayIds.has(latest.id)) {
         processedGiveawayIds.add(latest.id);
-        triggerGlobalGiveawayAlert(latest);
+        triggerTitleAlert(latest);
       }
     }
+  } catch (e) {}
+}
+
+function renderRadarKeywords(keywords) {
+  const container = document.getElementById('radarKeywordsChips');
+  if (!container) return;
+
+  let html = '';
+  keywords.forEach(kw => {
+    html += `
+      <span style="display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:10px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.3);font-size:9px;color:#38bdf8;font-weight:600;">
+        ${escapeHtml(kw)}
+        <span onclick="removeRadarKeyword('${escapeHtml(kw)}')" style="cursor:pointer;color:#ff5733;font-weight:bold;margin-left:2px;" title="Remove">×</span>
+      </span>
+    `;
+  });
+  container.innerHTML = html;
+}
+
+async function addKeywordToRadar() {
+  const input = document.getElementById('newKeywordInput');
+  const val = (input ? input.value : '').trim().toLowerCase();
+  if (!val) return;
+  try {
+    const r = await fetch(`${API}/api/radar/keywords`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'add', keyword: val })
+    });
+    const d = await r.json();
+    if (d.ok) {
+      input.value = '';
+      syncRadarStatus();
+    }
+  } catch (e) {}
+}
+
+async function removeRadarKeyword(kw) {
+  try {
+    const r = await fetch(`${API}/api/radar/keywords`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'remove', keyword: kw })
+    });
+    const d = await r.json();
+    if (d.ok) syncRadarStatus();
+  } catch (e) {}
+}
+
+async function resetRadarKeywords() {
+  try {
+    const r = await fetch(`${API}/api/radar/keywords`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'reset' })
+    });
+    const d = await r.json();
+    if (d.ok) syncRadarStatus();
   } catch (e) {}
 }
 
@@ -1695,23 +1762,38 @@ function renderRadarChips(watchlist, liveChannels, autoDiscover) {
   if (autoDiscover && liveChannels && liveChannels.length > 0) {
     liveChannels.forEach(c => {
       const v = c.viewers >= 1000 ? (c.viewers / 1000).toFixed(1) + 'k' : c.viewers;
-      html += `
-        <span style="display:inline-flex;align-items:center;gap:4px;padding:3px 7px;border-radius:12px;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.35);font-size:9.5px;font-family:var(--mono);color:#fff;" title="${escapeHtml(c.title || '')}">
-          <span style="width:5px;height:5px;border-radius:50%;background:#10b981;box-shadow:0 0 5px #10b981;"></span>
-          @${escapeHtml(c.slug)}
-          <span style="font-size:8.5px;color:#10b981;font-weight:700;">${v}</span>
-        </span>
-      `;
+      const isMatched = !!c.matched_keyword;
+      if (isMatched) {
+        html += `
+          <a href="https://kick.com/${escapeHtml(c.slug)}" target="_blank" style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:12px;background:rgba(245,158,11,0.22);border:1px solid #f59e0b;font-size:9.5px;font-family:var(--mono);color:#fbbf24;text-decoration:none;box-shadow:0 0 8px rgba(245,158,11,0.3);" title="${escapeHtml(c.title || '')}">
+            <span>🎯</span>
+            <b>@${escapeHtml(c.slug)}</b>
+            <span style="font-size:8.5px;background:#f59e0b;color:#000;padding:1px 4px;border-radius:4px;font-weight:900;">${escapeHtml(c.matched_keyword)}</span>
+            <span style="font-size:8.5px;color:#fff;">${v}</span>
+          </a>
+        `;
+      } else {
+        html += `
+          <a href="https://kick.com/${escapeHtml(c.slug)}" target="_blank" style="display:inline-flex;align-items:center;gap:4px;padding:3px 7px;border-radius:12px;background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.3);font-size:9.5px;font-family:var(--mono);color:#fff;text-decoration:none;" title="${escapeHtml(c.title || '')}">
+            <span style="width:5px;height:5px;border-radius:50%;background:#10b981;box-shadow:0 0 5px #10b981;"></span>
+            @${escapeHtml(c.slug)}
+            <span style="font-size:8.5px;color:#10b981;font-weight:700;">${v}</span>
+          </a>
+        `;
+      }
     });
   } else {
     const liveMap = new Map();
-    (liveChannels || []).forEach(c => liveMap.set(c.slug, c.is_live));
+    (liveChannels || []).forEach(c => liveMap.set(c.slug, c));
     (watchlist || []).forEach(ch => {
-      const isLive = liveMap.get(ch) === true;
+      const chData = liveMap.get(ch);
+      const isLive = !!chData;
+      const isMatched = chData && chData.matched_keyword;
       html += `
-        <span style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:12px;background:${isLive ? 'rgba(16,185,129,0.18)' : 'rgba(255,255,255,0.04)'};border:1px solid ${isLive ? 'rgba(16,185,129,0.4)' : 'rgba(255,255,255,0.08)'};font-size:10px;font-family:var(--mono);color:${isLive ? '#fff' : 'var(--muted)'};">
+        <span style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:12px;background:${isMatched ? 'rgba(245,158,11,0.2)' : isLive ? 'rgba(16,185,129,0.18)' : 'rgba(255,255,255,0.04)'};border:1px solid ${isMatched ? '#f59e0b' : isLive ? 'rgba(16,185,129,0.4)' : 'rgba(255,255,255,0.08)'};font-size:10px;font-family:var(--mono);color:${isMatched ? '#fbbf24' : isLive ? '#fff' : 'var(--muted)'};">
           <span style="width:6px;height:6px;border-radius:50%;background:${isLive ? '#10b981' : '#555'};${isLive ? 'box-shadow:0 0 6px #10b981;' : ''}"></span>
           @${escapeHtml(ch)}
+          ${isMatched ? `<span style="font-size:8px;background:#f59e0b;color:#000;padding:1px 3px;border-radius:3px;">${escapeHtml(chData.matched_keyword)}</span>` : ''}
           <span onclick="removeStreamerFromRadar('${escapeHtml(ch)}')" style="cursor:pointer;color:#ff5733;font-weight:bold;margin-left:2px;" title="Remove">×</span>
         </span>
       `;
@@ -1769,44 +1851,60 @@ async function refreshSlotsRadar() {
     const r = await fetch(`${API}/api/radar/refresh_slots`, { method: 'POST' });
     const d = await r.json();
     if (d.ok) {
-      addBotLog(`🎰 Auto-discovered ${d.count} live Slots & Casino streams on Kick!`, 'success');
+      addBotLog(`🎰 Discovered ${d.count} live Slots & Casino streams (${d.matched || 0} active hunts/tourneys)!`, 'success');
       syncRadarStatus();
     }
   } catch (e) {}
   if (btn) btn.textContent = '🔄 Refresh';
 }
 
-function triggerGlobalGiveawayAlert(evt) {
+function triggerTitleAlert(evt) {
   latestGiveawayEvent = evt;
   playGiveawaySound();
   if (navigator.vibrate) navigator.vibrate([300, 150, 300, 150, 600]);
 
+  const viewersStr = evt.viewers >= 1000 ? (evt.viewers / 1000).toFixed(1) + 'k' : evt.viewers;
+
   if (window.Notification && Notification.permission === 'granted') {
-    new Notification(`🎁 GIVEAWAY on #${evt.channel}!`, {
-      body: `Keyword: ${evt.keyword} (from @${evt.sender})`
+    new Notification(`🎯 ${evt.matched_keyword} on @${evt.slug}!`, {
+      body: `"${evt.title}" (${viewersStr} viewers)`
     });
   }
 
-  showGlobalGiveawayBanner(evt);
-  addBotLog(`🎁 GLOBAL GIVEAWAY DETECTED on #${evt.channel}! Keyword: "${evt.keyword}" from @${evt.sender}`, 'success');
+  showTitleAlertBanner(evt);
+  addBotLog(`🎯 [TITLE ALERT] @${evt.slug} is running a ${evt.matched_keyword}! "${evt.title}" (${viewersStr} viewers)`, 'success');
 }
 
-function showGlobalGiveawayBanner(evt) {
+function showTitleAlertBanner(evt) {
   const banner = document.getElementById('giveawayAlertBanner');
   const chEl = document.getElementById('bannerChannel');
-  const kwEl = document.getElementById('bannerKeyword');
-  const senderEl = document.getElementById('bannerSender');
-  if (chEl) chEl.textContent = `#${evt.channel}`;
-  if (kwEl) kwEl.textContent = evt.keyword;
-  if (senderEl) senderEl.textContent = `from @${evt.sender}`;
+  const titleEl = document.getElementById('bannerTitle');
+  const badgeEl = document.getElementById('bannerBadgeText');
+  const viewersEl = document.getElementById('bannerViewers');
+  const linkEl = document.getElementById('bannerWatchLink');
+
+  const viewersStr = evt.viewers >= 1000 ? (evt.viewers / 1000).toFixed(1) + 'k' : evt.viewers;
+
+  if (chEl) chEl.textContent = `@${evt.slug}`;
+  if (titleEl) titleEl.textContent = evt.title;
+  if (badgeEl) badgeEl.textContent = evt.matched_keyword || 'BONUS HUNT';
+  if (viewersEl) viewersEl.textContent = `${viewersStr} viewers`;
+  if (linkEl) linkEl.href = evt.url || `https://kick.com/${evt.slug}`;
   if (banner) banner.style.display = 'block';
 
   const box = document.getElementById('radarLastDetectedBox');
   const rCh = document.getElementById('radarChannelText');
-  const rKw = document.getElementById('radarKeywordText');
+  const rTitle = document.getElementById('radarTitleText');
+  const rBadge = document.getElementById('radarKeywordBadge');
+  const rViewers = document.getElementById('radarViewersText');
+  const rWatch = document.getElementById('radarWatchBtn');
   const rTime = document.getElementById('radarDetectedTime');
-  if (rCh) rCh.textContent = `#${evt.channel}`;
-  if (rKw) rKw.textContent = evt.keyword;
+
+  if (rCh) rCh.textContent = `@${evt.slug}`;
+  if (rTitle) rTitle.textContent = evt.title;
+  if (rBadge) rBadge.textContent = evt.matched_keyword || 'BONUS HUNT';
+  if (rViewers) rViewers.textContent = `${viewersStr} viewers`;
+  if (rWatch) rWatch.href = evt.url || `https://kick.com/${evt.slug}`;
   if (rTime) rTime.textContent = evt.time || 'Just now';
   if (box) box.style.display = 'block';
 }
@@ -1814,44 +1912,6 @@ function showGlobalGiveawayBanner(evt) {
 function dismissGiveawayAlert() {
   const banner = document.getElementById('giveawayAlertBanner');
   if (banner) banner.style.display = 'none';
-}
-
-async function enterDetectedGiveaway() {
-  if (!latestGiveawayEvent || !latestGiveawayEvent.keyword) {
-    alert('No giveaway event detected yet.');
-    return;
-  }
-  const evt = latestGiveawayEvent;
-  const liveAccounts = accounts.filter(a => a.valid || a.username);
-  if (!liveAccounts.length) {
-    alert('No live accounts loaded in Accounts & Bot.');
-    return;
-  }
-  const tokens = liveAccounts.map(a => a.token);
-  addBotLog(`⚡ Submitting giveaway entry "${evt.keyword}" on #${evt.channel} with ${tokens.length} accounts...`, 'info');
-
-  try {
-    const r = await fetch(`${API}/api/multi_send`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chatroom_id: evt.chatroom_id,
-        channel: evt.channel,
-        words: [evt.keyword],
-        tokens: tokens,
-        delay_ms: 350
-      })
-    });
-    const d = await r.json();
-    if (d.ok) {
-      addBotLog(`🎉 Entered giveaway on #${evt.channel} with ${d.sent}/${tokens.length} accounts!`, 'success');
-      dismissGiveawayAlert();
-    } else {
-      addBotLog(`Entry failed: ${d.error}`, 'error');
-    }
-  } catch (e) {
-    addBotLog(`Entry error: ${e.message}`, 'error');
-  }
 }
 
 async function toggleGiveawayRadar(active) {
@@ -1868,25 +1928,16 @@ async function toggleGiveawayRadar(active) {
   } catch (e) {}
 }
 
-async function toggleAutoEnter(val) {
-  globalAutoEnter = val;
-  try {
-    await fetch(`${API}/api/radar/toggle`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ auto_enter: val })
-    });
-    if (val) addBotLog('⚡ Auto-Enter Everywhere ENABLED: Bot will automatically enter any stream when BotRix rolls!', 'info');
-  } catch (e) {}
-}
-
 function testGiveawayAlarm() {
   playGiveawaySound();
   if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
-  showGlobalGiveawayBanner({
-    channel: 'roshtein',
-    keyword: '!ticket',
-    sender: 'botrix',
+  triggerTitleAlert({
+    slug: 'roshtein',
+    streamer: 'ROSHTEIN',
+    matched_keyword: 'Bonus Hunt',
+    title: '🍁$50,000 BONUS HUNT OPENING🍁 !STAKE',
+    viewers: 14200,
+    url: 'https://kick.com/roshtein',
     time: new Date().toLocaleTimeString()
   });
 }
@@ -1898,7 +1949,7 @@ function requestNotificationPerm() {
   }
   Notification.requestPermission().then(permission => {
     if (permission === 'granted') {
-      new Notification('🔔 Notifications Enabled!', { body: 'You will receive instant alerts when BotRix triggers a giveaway on ANY stream!' });
+      new Notification('🔔 Notifications Enabled!', { body: 'You will receive instant alerts when ANY Slots streamer runs a Bonus Hunt, Tourney, or Battle!' });
     }
   });
 }

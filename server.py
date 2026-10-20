@@ -657,8 +657,11 @@ async def ai_generate(req: AIGenerateRequest):
 
 
 
-# ── MULTI-STREAM GLOBAL GIVEAWAY RADAR (SLOTS & CASINO DIRECTORY) ────────────
+# ── [SLOTS & CASINO] STREAM TITLE RADAR (BONUS HUNT / TOURNAMENT / BATTLE) ──
 RADAR_WATCHLIST_FILE = "radar_watchlist.json"
+DEFAULT_TITLE_KEYWORDS = [
+    "bonus hunt", "hunt", "tourney", "tournament", "bonus buy battle", "buy battle"
+]
 DEFAULT_WATCHLIST = [
     "roshtein", "trainwreckstv", "classybeef", "deuceace", "xposed",
     "ayezee", "corinnakopf", "adinross", "stevewilldoit", "casinodaddy",
@@ -669,12 +672,11 @@ DEFAULT_WATCHLIST = [
 
 radar_state = {
     "enabled": True,
-    "auto_enter": False,
-    "auto_discover_slots": True,  # Automatically scans ALL live Slots & Casino streams on Kick
+    "auto_discover_slots": True,
+    "title_keywords": list(DEFAULT_TITLE_KEYWORDS),
     "watchlist": list(DEFAULT_WATCHLIST),
-    "live_slots_streamers": {},  # slug -> {channel_id, slug, username, viewers, title, profile_pic}
-    "channel_cache": {},
-    "processed_msg_ids": set(),
+    "live_slots_streamers": {},  # slug -> {channel_id, slug, username, viewers, title, profile_pic, matched_keyword}
+    "notified_stream_titles": set(),  # deduplication set: f"{slug}_{title.lower()}"
     "events": [],
     "last_discovery_time": 0
 }
@@ -685,7 +687,7 @@ def load_radar_state():
             with open(RADAR_WATCHLIST_FILE, "r", encoding="utf-8") as f:
                 d = json.load(f)
                 radar_state["watchlist"] = d.get("watchlist", DEFAULT_WATCHLIST)
-                radar_state["auto_enter"] = d.get("auto_enter", False)
+                radar_state["title_keywords"] = d.get("title_keywords", DEFAULT_TITLE_KEYWORDS)
                 radar_state["enabled"] = d.get("enabled", True)
                 radar_state["auto_discover_slots"] = d.get("auto_discover_slots", True)
         except Exception:
@@ -696,7 +698,7 @@ def save_radar_state():
         with open(RADAR_WATCHLIST_FILE, "w", encoding="utf-8") as f:
             json.dump({
                 "watchlist": radar_state["watchlist"],
-                "auto_enter": radar_state["auto_enter"],
+                "title_keywords": radar_state["title_keywords"],
                 "enabled": radar_state["enabled"],
                 "auto_discover_slots": radar_state.get("auto_discover_slots", True)
             }, f, indent=2)
@@ -705,13 +707,35 @@ def save_radar_state():
 
 load_radar_state()
 
-GIVEAWAY_PATTERNS = [
-    re.compile(r"""(?:palabra\s+clave|keyword|kw|word|code|type|command|escribe|escribir)\s*(?:is|es|[:=\-])?\s*["']?([!#$]?[a-zA-Z0-9_\-]+)""", re.I),
-    re.compile(r"""([!#$][a-zA-Z0-9_\-]+)\s*(?:to\s+enter|para\s+participar|to\s+win|for\s+giveaway|for\s+raffle)""", re.I),
-    re.compile(r"""(?:giveaway|sorteo|raffle|drop).*(?:type|escribe|send|enter\s+with)\s*["']?([!#$]?[a-zA-Z0-9_\-]+)""", re.I),
-    re.compile(r"""(?:giveaway|raffle|sorteo)\s+(?:keyword|word|kw)\s*(?:is|es|[:=\-])?\s*["']?([!#$]?[a-zA-Z0-9_\-]+)""", re.I),
-    re.compile(r"""(?:type|command|kw)\s*:\s*["']?([!#$]?[a-zA-Z0-9_\-]+)""", re.I)
-]
+def match_title_keywords(title: str, keywords=None) -> Optional[str]:
+    """Matches stream title against target casino keywords like bonus hunt, tourney, bonus buy battle."""
+    if not title:
+        return None
+    t_lower = title.lower()
+
+    # High-priority exact matches
+    if "bonus buy battle" in t_lower or "buy battle" in t_lower or "bonus battle" in t_lower:
+        return "Bonus Buy Battle"
+    if "bonus hunt" in t_lower:
+        return "Bonus Hunt"
+    if re.search(r'\btournament(?:s)?\b|\btourney(?:s)?\b', t_lower):
+        return "Tournament"
+    if re.search(r'\bhunt(?:s|ing)?\b', t_lower):
+        return "Hunt"
+
+    # Dynamic / custom keywords
+    kws = keywords if keywords is not None else radar_state.get("title_keywords", DEFAULT_TITLE_KEYWORDS)
+    for kw in kws:
+        k_clean = kw.strip().lower()
+        if not k_clean:
+            continue
+        if " " not in k_clean and k_clean.isalnum():
+            if re.search(r'\b' + re.escape(k_clean) + r'\b', t_lower):
+                return kw.strip().title()
+        elif k_clean in t_lower:
+            return kw.strip().title()
+
+    return None
 
 def fetch_live_slots_streamers(max_streams=250):
     """Fetches all live streams in the Slots & Casino category directly from Kick."""
@@ -762,218 +786,78 @@ def fetch_live_slots_streamers(max_streams=250):
             break
     return discovered
 
-def slots_discovery_worker():
-    """Background thread that periodically refreshes the full list of live Slots & Casino streams."""
-    while True:
-        try:
-            if radar_state.get("enabled") and radar_state.get("auto_discover_slots", True):
-                streams = fetch_live_slots_streamers(max_streams=250)
-                now = time.time()
-                st_map = {}
-                for s in streams:
-                    slug = s["slug"]
-                    st_map[slug] = s
-                    existing_cache = radar_state["channel_cache"].get(slug, {})
-                    radar_state["channel_cache"][slug] = {
-                        "id": s["channel_id"],
-                        "chatroom_id": existing_cache.get("chatroom_id"),
-                        "is_live": True,
-                        "category": "Slots & Casino",
-                        "viewers": s["viewers"],
-                        "title": s["title"],
-                        "last_checked": now
-                    }
-                radar_state["live_slots_streamers"] = st_map
-                radar_state["last_discovery_time"] = int(now)
-                print(f"[RADAR] 🎰 Auto-discovered {len(st_map)} live Slots & Casino streamers on Kick.")
-            time.sleep(45)
-        except Exception as e:
-            time.sleep(30)
+def scan_slots_titles_cycle():
+    """Scans all live Slots & Casino streams for bonus hunt / tourney / battle in their titles."""
+    if not radar_state.get("enabled"):
+        return
 
-threading.Thread(target=slots_discovery_worker, daemon=True).start()
+    now = time.time()
+    streams = fetch_live_slots_streamers(max_streams=250)
+    st_map = {}
 
-def scan_channel_for_giveaway(target, session):
-    try:
-        now = time.time()
-        if isinstance(target, dict):
-            ch_slug = target.get("slug", "").lower()
-            ch_id = target.get("channel_id")
-        else:
-            ch_slug = str(target).lower().replace("#", "")
-            ch_id = None
+    for s in streams:
+        slug = s["slug"]
+        title = s.get("title", "")
+        matched_kw = match_title_keywords(title)
+        s["matched_keyword"] = matched_kw
+        st_map[slug] = s
 
-        if not ch_slug:
-            return
+        # If title matches target keyword, trigger notification event
+        if matched_kw:
+            dedup_key = f"{slug}_{title.strip().lower()}"
+            if dedup_key not in radar_state["notified_stream_titles"]:
+                radar_state["notified_stream_titles"].add(dedup_key)
+                if len(radar_state["notified_stream_titles"]) > 1000:
+                    first = next(iter(radar_state["notified_stream_titles"]))
+                    radar_state["notified_stream_titles"].remove(first)
 
-        cache = radar_state["channel_cache"].get(ch_slug, {})
-        if not ch_id:
-            ch_id = cache.get("id")
-
-        # If channel ID unknown or cache expired for custom watchlist item, resolve from Kick
-        if not ch_id or not cache or (now - cache.get("last_checked", 0) > 60):
-            r = session.get(f"https://kick.com/api/v2/channels/{ch_slug}", timeout_seconds=6)
-            if r.status_code == 200:
-                d = r.json()
-                livestream = d.get("livestream")
-                is_live = livestream is not None
-                is_slots = False
-                subcat_name = "Offline"
-                if is_live and livestream:
-                    for c in livestream.get("categories", []):
-                        slug = (c.get("slug") or "").lower()
-                        name = (c.get("name") or "").lower()
-                        parent = (c.get("category", {}).get("name") or "").lower()
-                        if "slot" in slug or "slot" in name or "casino" in name or "gambl" in parent:
-                            is_slots = True
-                            subcat_name = c.get("name") or "Slots & Casino"
-                            break
-
-                ch_id = d.get("id")
-                room_id = d.get("chatroom", {}).get("id")
-                cache = {
-                    "id": ch_id, 
-                    "chatroom_id": room_id, 
-                    "is_live": is_live and is_slots,
-                    "category": subcat_name,
-                    "last_checked": now
+                evt = {
+                    "id": f"{slug}_{int(now)}",
+                    "streamer": s.get("username") or slug,
+                    "slug": slug,
+                    "channel": slug,
+                    "title": title,
+                    "matched_keyword": matched_kw,
+                    "viewers": s.get("viewers", 0),
+                    "profile_pic": s.get("profile_pic", ""),
+                    "url": f"https://kick.com/{slug}",
+                    "time": time.strftime("%H:%M:%S"),
+                    "timestamp": int(now)
                 }
-                radar_state["channel_cache"][ch_slug] = cache
-            else:
-                return
+                radar_state["events"].insert(0, evt)
+                radar_state["events"] = radar_state["events"][:40]
+                try:
+                    print(f"[RADAR] [TITLE ALERT] @{slug} ({s.get('viewers', 0)} viewers) -> {matched_kw}! Title: {title}")
+                except Exception:
+                    pass
 
-        if not cache.get("is_live", True) or not ch_id:
-            return
+    radar_state["live_slots_streamers"] = st_map
+    radar_state["last_discovery_time"] = int(now)
 
-        # Fetch latest 25 messages from the live chatroom
-        mr = session.get(f"https://kick.com/api/v2/channels/{ch_id}/messages", timeout_seconds=6)
-        if mr.status_code != 200:
-            return
-        msgs = mr.json().get("data", {}).get("messages", [])
-
-        for m in reversed(msgs):
-            mid = m.get("id")
-            if mid in radar_state["processed_msg_ids"]:
-                continue
-            radar_state["processed_msg_ids"].add(mid)
-            if len(radar_state["processed_msg_ids"]) > 1000:
-                first = next(iter(radar_state["processed_msg_ids"]))
-                radar_state["processed_msg_ids"].remove(first)
-
-            sender = (m.get("sender", {}).get("username") or "").lower()
-            content = m.get("content") or ""
-            is_botrix = "botrix" in sender or sender == "bot_rix"
-            is_streamer = sender == ch_slug.lower()
-
-            if is_botrix or is_streamer:
-                kw = None
-                for pat in GIVEAWAY_PATTERNS:
-                    m_kw = pat.search(content)
-                    if m_kw:
-                        kw = m_kw.group(1).strip()
-                        break
-
-                if kw and len(kw) <= 40:
-                    chatroom_id = cache.get("chatroom_id")
-                    if not chatroom_id:
-                        # Fetch chatroom ID on-demand for instant entry
-                        try:
-                            cr = session.get(f"https://kick.com/api/v2/channels/{ch_slug}", timeout_seconds=4)
-                            if cr.status_code == 200:
-                                chatroom_id = cr.json().get("chatroom", {}).get("id")
-                                cache["chatroom_id"] = chatroom_id
-                                radar_state["channel_cache"][ch_slug] = cache
-                        except Exception:
-                            pass
-
-                    evt = {
-                        "id": f"{ch_slug}_{mid}",
-                        "channel": ch_slug,
-                        "chatroom_id": chatroom_id,
-                        "channel_id": ch_id,
-                        "keyword": kw,
-                        "sender": sender,
-                        "content": content,
-                        "time": time.strftime("%H:%M:%S"),
-                        "timestamp": int(now)
-                    }
-                    radar_state["events"].insert(0, evt)
-                    radar_state["events"] = radar_state["events"][:30]
-                    print(f"[RADAR] 🎁 SLOTS GIVEAWAY DETECTED on #{ch_slug}! Keyword: '{kw}' from @{sender}")
-
-                    if radar_state.get("auto_enter") and chatroom_id:
-                        try:
-                            if os.path.exists(TOKENS_FILE):
-                                with open(TOKENS_FILE, "r", encoding="utf-8") as f:
-                                    tks = [line.strip() for line in f if line.strip()]
-                                if tks:
-                                    print(f"[RADAR] Auto-entering on #{ch_slug} with {len(tks)} tokens for '{kw}'...")
-                                    threading.Thread(
-                                        target=auto_enter_giveaway,
-                                        args=(chatroom_id, ch_slug, kw, tks),
-                                        daemon=True
-                                    ).start()
-                        except Exception as e:
-                            print(f"[RADAR] Auto-enter error: {e}")
-    except Exception:
-        pass
-
-def auto_enter_giveaway(chatroom_id, channel, keyword, tokens):
-    content = format_kick_message(keyword, channel)
-    for i, token in enumerate(tokens):
-        bare = token.strip()
-        if ":" in bare: bare = bare.split(":")[-1]
-        if "|" in bare: bare = bare.split("|")[-1]
-        s = make_session(token=bare, channel=channel)
-        s.headers["content-type"] = "application/json"
-        try:
-            s.post(f"https://kick.com/api/v2/messages/send/{chatroom_id}",
-                   json={"content": content, "type": "message"}, timeout_seconds=8)
-        except Exception:
-            pass
-        time.sleep(0.35)
-
-def radar_background_loop():
-    from concurrent.futures import ThreadPoolExecutor
-    session = make_session()
+def slots_title_radar_worker():
+    """Background thread running title scan every 20 seconds."""
     while True:
         try:
-            if radar_state.get("enabled"):
-                targets = []
-                if radar_state.get("auto_discover_slots", True):
-                    # All discovered live Slots & Casino streamers
-                    live_list = list(radar_state.get("live_slots_streamers", {}).values())
-                    # Sort by viewer count desc so high-traffic channels are scanned first
-                    live_list.sort(key=lambda x: x.get("viewers", 0), reverse=True)
-                    targets.extend(live_list)
+            scan_slots_titles_cycle()
+            time.sleep(20)
+        except Exception as e:
+            time.sleep(15)
 
-                    # Also include any custom watchlist streams not already in discovered list
-                    live_slugs = {s["slug"] for s in live_list}
-                    for custom_ch in radar_state.get("watchlist", []):
-                        if custom_ch.lower() not in live_slugs:
-                            targets.append({"slug": custom_ch.lower()})
-                else:
-                    for ch in radar_state.get("watchlist", []):
-                        targets.append({"slug": ch.lower()})
-
-                if targets:
-                    with ThreadPoolExecutor(max_workers=12) as ex:
-                        list(ex.map(lambda t: scan_channel_for_giveaway(t, session), targets))
-            time.sleep(1.5)
-        except Exception:
-            time.sleep(2.5)
-
-threading.Thread(target=radar_background_loop, daemon=True).start()
+threading.Thread(target=slots_title_radar_worker, daemon=True).start()
 
 @app.get("/api/radar/status")
 async def get_radar_status():
     discovered = list(radar_state.get("live_slots_streamers", {}).values())
-    discovered.sort(key=lambda x: x.get("viewers", 0), reverse=True)
+    # Sort: matched streams first, then by viewers desc
+    discovered.sort(key=lambda x: (1 if x.get("matched_keyword") else 0, x.get("viewers", 0)), reverse=True)
+    matched_count = sum(1 for s in discovered if s.get("matched_keyword"))
     live_channels = [
         {
             "slug": s.get("slug"),
             "username": s.get("username"),
             "viewers": s.get("viewers", 0),
             "title": s.get("title", ""),
+            "matched_keyword": s.get("matched_keyword"),
             "is_live": True
         }
         for s in discovered
@@ -981,39 +865,52 @@ async def get_radar_status():
     return {
         "ok": True,
         "enabled": radar_state["enabled"],
-        "auto_enter": radar_state["auto_enter"],
         "auto_discover_slots": radar_state.get("auto_discover_slots", True),
+        "title_keywords": radar_state.get("title_keywords", DEFAULT_TITLE_KEYWORDS),
         "live_slots_count": len(discovered),
+        "matched_count": matched_count,
         "watchlist": radar_state["watchlist"],
         "live_channels": live_channels,
-        "events": radar_state["events"][:15],
+        "events": radar_state["events"][:20],
         "last_discovery_time": radar_state.get("last_discovery_time", 0)
     }
 
 @app.post("/api/radar/refresh_slots")
 async def refresh_slots_streamers():
     try:
-        discovered = fetch_live_slots_streamers(max_streams=250)
-        now = time.time()
-        st_map = {}
-        for s in discovered:
-            slug = s["slug"]
-            st_map[slug] = s
-            existing_cache = radar_state["channel_cache"].get(slug, {})
-            radar_state["channel_cache"][slug] = {
-                "id": s["channel_id"],
-                "chatroom_id": existing_cache.get("chatroom_id"),
-                "is_live": True,
-                "category": "Slots & Casino",
-                "viewers": s["viewers"],
-                "title": s["title"],
-                "last_checked": now
-            }
-        radar_state["live_slots_streamers"] = st_map
-        radar_state["last_discovery_time"] = int(now)
-        return {"ok": True, "count": len(st_map)}
+        scan_slots_titles_cycle()
+        return {
+            "ok": True,
+            "count": len(radar_state.get("live_slots_streamers", {})),
+            "matched": sum(1 for s in radar_state.get("live_slots_streamers", {}).values() if s.get("matched_keyword"))
+        }
     except Exception as e:
         return {"ok": False, "error": str(e)}
+
+class RadarKeywordsRequest(BaseModel):
+    action: str  # "add", "remove", "reset", "set"
+    keyword: Optional[str] = None
+    keywords: Optional[List[str]] = None
+
+@app.post("/api/radar/keywords")
+async def update_radar_keywords(req: RadarKeywordsRequest):
+    if req.action == "add" and req.keyword:
+        kw = req.keyword.strip().lower()
+        if kw and kw not in radar_state["title_keywords"]:
+            radar_state["title_keywords"].append(kw)
+            save_radar_state()
+    elif req.action == "remove" and req.keyword:
+        kw = req.keyword.strip().lower()
+        if kw in radar_state["title_keywords"]:
+            radar_state["title_keywords"].remove(kw)
+            save_radar_state()
+    elif req.action == "reset":
+        radar_state["title_keywords"] = list(DEFAULT_TITLE_KEYWORDS)
+        save_radar_state()
+    elif req.action == "set" and req.keywords is not None:
+        radar_state["title_keywords"] = [k.strip().lower() for k in req.keywords if k.strip()]
+        save_radar_state()
+    return {"ok": True, "title_keywords": radar_state["title_keywords"]}
 
 class RadarWatchlistRequest(BaseModel):
     action: str  # "add", "remove", "set"
@@ -1041,22 +938,18 @@ async def update_radar_watchlist(req: RadarWatchlistRequest):
 
 class RadarToggleRequest(BaseModel):
     enabled: Optional[bool] = None
-    auto_enter: Optional[bool] = None
     auto_discover_slots: Optional[bool] = None
 
 @app.post("/api/radar/toggle")
 async def toggle_radar(req: RadarToggleRequest):
     if req.enabled is not None:
         radar_state["enabled"] = req.enabled
-    if req.auto_enter is not None:
-        radar_state["auto_enter"] = req.auto_enter
     if req.auto_discover_slots is not None:
         radar_state["auto_discover_slots"] = req.auto_discover_slots
     save_radar_state()
     return {
         "ok": True, 
         "enabled": radar_state["enabled"], 
-        "auto_enter": radar_state["auto_enter"],
         "auto_discover_slots": radar_state.get("auto_discover_slots", True)
     }
 
