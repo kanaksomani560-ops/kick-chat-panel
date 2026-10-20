@@ -1146,9 +1146,14 @@
         <div class="section-title" style="color:#10b981;margin-bottom:0;">🎰 [Slots & Casino] Giveaway Radar</div>
         <span class="radar-status-dot active" id="radarStatusDot" title="Radar Active"></span>
       </div>
-      <div style="font-size:10px;color:var(--muted);margin-top:4px;">Exclusively tracks Slots & Casino streams 24/7. Auto-detects BotRix balance drops, raffle keywords & rolls with sound siren & push alerts.</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:4px;">Exclusively tracks Slots & Casino streams 24/7. Auto-detects BotRix balance drops, raffle keywords & rolls across ALL live casino streams with sound siren & push alerts.</div>
 
       <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px;">
+        <label style="display:flex;align-items:center;gap:8px;font-size:11px;color:#00ffcc;cursor:pointer;">
+          <input type="checkbox" id="autoDiscoverSlotsToggle" checked onchange="toggleAutoDiscoverSlots(this.checked)" style="width:15px;height:15px;cursor:pointer;" />
+          <b>🌐 Auto-Discover ALL Live Slots & Casino Streams (Auto-Track 150+ Channels)</b>
+        </label>
+
         <label style="display:flex;align-items:center;gap:8px;font-size:11px;color:#fff;cursor:pointer;">
           <input type="checkbox" id="giveawayRadarToggle" checked onchange="toggleGiveawayRadar(this.checked)" style="width:15px;height:15px;cursor:pointer;" />
           <b>Enable Slots & Casino Radar (Sound Siren + Mobile Vibration)</b>
@@ -1163,14 +1168,17 @@
       <!-- Watched Streamers Chips & Add Streamer -->
       <div style="margin-top:10px;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-          <span style="font-size:9.5px;color:var(--muted);letter-spacing:0.8px;font-weight:700;">WATCHED STREAMS:</span>
-          <span style="font-size:9.5px;color:#10b981;font-weight:700;" id="radarLiveCount">Scanning...</span>
+          <span style="font-size:9.5px;color:var(--muted);letter-spacing:0.8px;font-weight:700;">MONITORED STREAMS:</span>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span style="font-size:9.5px;color:#10b981;font-weight:700;" id="radarLiveCount">Scanning live casino...</span>
+            <button class="btn btn-dark" id="radarRefreshBtn" onclick="refreshSlotsRadar()" style="font-size:8.5px;padding:2px 7px;min-height:20px;border-radius:6px;">🔄 Refresh</button>
+          </div>
         </div>
-        <div id="radarStreamersChips" style="display:flex;flex-wrap:wrap;gap:4px;max-height:85px;overflow-y:auto;padding-bottom:2px;">
-          <!-- Populated dynamically with chips -->
+        <div id="radarStreamersChips" style="display:flex;flex-wrap:wrap;gap:4px;max-height:95px;overflow-y:auto;padding-bottom:2px;">
+          <!-- Populated dynamically with live casino streamers chips -->
         </div>
         <div style="display:flex;gap:6px;margin-top:8px;">
-          <input type="text" id="newRadarStreamerInput" placeholder="Add Slots streamer(s) e.g. roshtein, classybeef, xposed..." style="flex:1;padding:6px 10px;font-size:11px;border-radius:10px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.05);color:#fff;" onkeypress="if(event.key==='Enter')addStreamerToRadar()"/>
+          <input type="text" id="newRadarStreamerInput" placeholder="Add custom streamer(s) e.g. roshtein, classybeef, xposed..." style="flex:1;padding:6px 10px;font-size:11px;border-radius:10px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.05);color:#fff;" onkeypress="if(event.key==='Enter')addStreamerToRadar()"/>
           <button class="btn btn-green" onclick="addStreamerToRadar()" style="padding:6px 12px;font-size:10px;min-height:30px;border-radius:10px;font-weight:700;">+ ADD</button>
         </div>
       </div>
@@ -1193,7 +1201,7 @@
           <button class="btn btn-green" id="radarEnterBtn" onclick="enterDetectedGiveaway()" style="font-size:10px;padding:5px 10px;font-weight:800;">⚡ ENTER NOW</button>
         </div>
       </div>
-      <div class="sline" id="radarStatusText" style="margin-top:6px;font-size:10px;color:var(--muted);">🟢 Slots & Casino Radar Active — Watching top casino streamers for BotRix giveaways</div>
+      <div class="sline" id="radarStatusText" style="margin-top:6px;font-size:10px;color:var(--muted);">🟢 Slots & Casino Radar Active — Auto-discovering & scanning all live casino streams</div>
     </div>
 
     <div class="accounts-wrap">
@@ -1628,12 +1636,46 @@ async function syncRadarStatus() {
     if (!d.ok) return;
 
     const liveCountEl = document.getElementById('radarLiveCount');
-    const liveStreams = (d.live_channels || []).filter(c => c.is_live);
-    if (liveCountEl) {
-      liveCountEl.textContent = `${liveStreams.length} Live / ${d.watchlist.length} Total`;
+    const autoDiscoverToggle = document.getElementById('autoDiscoverSlotsToggle');
+    const radarToggle = document.getElementById('giveawayRadarToggle');
+    const autoEnterToggle = document.getElementById('autoEnterGiveawayToggle');
+    const statusText = document.getElementById('radarStatusText');
+    const dot = document.getElementById('radarStatusDot');
+
+    if (dot) dot.classList.toggle('active', d.enabled !== false);
+
+    if (autoDiscoverToggle && document.activeElement !== autoDiscoverToggle) {
+      autoDiscoverToggle.checked = d.auto_discover_slots !== false;
+    }
+    if (radarToggle && document.activeElement !== radarToggle) {
+      radarToggle.checked = d.enabled !== false;
+    }
+    if (autoEnterToggle && document.activeElement !== autoEnterToggle) {
+      autoEnterToggle.checked = d.auto_enter === true;
     }
 
-    renderRadarChips(d.watchlist, d.live_channels || []);
+    const liveStreams = d.live_channels || [];
+    if (liveCountEl) {
+      if (d.auto_discover_slots !== false) {
+        liveCountEl.textContent = `🟢 ${liveStreams.length} Live Casino Streams`;
+      } else {
+        const liveMap = new Map(liveStreams.map(c => [c.slug, c.is_live]));
+        const liveCount = (d.watchlist || []).filter(w => liveMap.get(w)).length;
+        liveCountEl.textContent = `${liveCount} Live / ${d.watchlist.length} Total`;
+      }
+    }
+
+    if (statusText) {
+      if (!d.enabled) {
+        statusText.textContent = '⚪ Slots Radar Paused';
+      } else if (d.auto_discover_slots !== false) {
+        statusText.textContent = `🟢 Auto-Scanning ${liveStreams.length} Live Slots & Casino Streams 24/7 for BotRix Giveaways`;
+      } else {
+        statusText.textContent = `🟢 Scanning ${d.watchlist.length} Custom Watched Channels for BotRix Giveaways`;
+      }
+    }
+
+    renderRadarChips(d.watchlist, liveStreams, d.auto_discover_slots !== false);
 
     if (d.events && d.events.length > 0) {
       const latest = d.events[0];
@@ -1645,23 +1687,36 @@ async function syncRadarStatus() {
   } catch (e) {}
 }
 
-function renderRadarChips(watchlist, liveChannels) {
+function renderRadarChips(watchlist, liveChannels, autoDiscover) {
   const container = document.getElementById('radarStreamersChips');
   if (!container) return;
-  const liveMap = new Map();
-  liveChannels.forEach(c => liveMap.set(c.slug, c.is_live));
 
   let html = '';
-  watchlist.forEach(ch => {
-    const isLive = liveMap.get(ch) === true;
-    html += `
-      <span style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:12px;background:${isLive ? 'rgba(16,185,129,0.18)' : 'rgba(255,255,255,0.04)'};border:1px solid ${isLive ? 'rgba(16,185,129,0.4)' : 'rgba(255,255,255,0.08)'};font-size:10px;font-family:var(--mono);color:${isLive ? '#fff' : 'var(--muted)'};">
-        <span style="width:6px;height:6px;border-radius:50%;background:${isLive ? '#10b981' : '#555'};${isLive ? 'box-shadow:0 0 6px #10b981;' : ''}"></span>
-        @${escapeHtml(ch)}
-        <span onclick="removeStreamerFromRadar('${escapeHtml(ch)}')" style="cursor:pointer;color:#ff5733;font-weight:bold;margin-left:2px;" title="Remove">×</span>
-      </span>
-    `;
-  });
+  if (autoDiscover && liveChannels && liveChannels.length > 0) {
+    liveChannels.forEach(c => {
+      const v = c.viewers >= 1000 ? (c.viewers / 1000).toFixed(1) + 'k' : c.viewers;
+      html += `
+        <span style="display:inline-flex;align-items:center;gap:4px;padding:3px 7px;border-radius:12px;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.35);font-size:9.5px;font-family:var(--mono);color:#fff;" title="${escapeHtml(c.title || '')}">
+          <span style="width:5px;height:5px;border-radius:50%;background:#10b981;box-shadow:0 0 5px #10b981;"></span>
+          @${escapeHtml(c.slug)}
+          <span style="font-size:8.5px;color:#10b981;font-weight:700;">${v}</span>
+        </span>
+      `;
+    });
+  } else {
+    const liveMap = new Map();
+    (liveChannels || []).forEach(c => liveMap.set(c.slug, c.is_live));
+    (watchlist || []).forEach(ch => {
+      const isLive = liveMap.get(ch) === true;
+      html += `
+        <span style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:12px;background:${isLive ? 'rgba(16,185,129,0.18)' : 'rgba(255,255,255,0.04)'};border:1px solid ${isLive ? 'rgba(16,185,129,0.4)' : 'rgba(255,255,255,0.08)'};font-size:10px;font-family:var(--mono);color:${isLive ? '#fff' : 'var(--muted)'};">
+          <span style="width:6px;height:6px;border-radius:50%;background:${isLive ? '#10b981' : '#555'};${isLive ? 'box-shadow:0 0 6px #10b981;' : ''}"></span>
+          @${escapeHtml(ch)}
+          <span onclick="removeStreamerFromRadar('${escapeHtml(ch)}')" style="cursor:pointer;color:#ff5733;font-weight:bold;margin-left:2px;" title="Remove">×</span>
+        </span>
+      `;
+    });
+  }
   container.innerHTML = html;
 }
 
@@ -1693,6 +1748,32 @@ async function removeStreamerFromRadar(ch) {
     const d = await r.json();
     if (d.ok) syncRadarStatus();
   } catch (e) {}
+}
+
+async function toggleAutoDiscoverSlots(val) {
+  try {
+    await fetch(`${API}/api/radar/toggle`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ auto_discover_slots: val })
+    });
+    syncRadarStatus();
+    addBotLog(val ? '🌐 Auto-Discover ALL Live Slots & Casino streams ENABLED!' : 'Custom Watchlist mode enabled', 'info');
+  } catch (e) {}
+}
+
+async function refreshSlotsRadar() {
+  const btn = document.getElementById('radarRefreshBtn');
+  if (btn) btn.textContent = '⏳...';
+  try {
+    const r = await fetch(`${API}/api/radar/refresh_slots`, { method: 'POST' });
+    const d = await r.json();
+    if (d.ok) {
+      addBotLog(`🎰 Auto-discovered ${d.count} live Slots & Casino streams on Kick!`, 'success');
+      syncRadarStatus();
+    }
+  } catch (e) {}
+  if (btn) btn.textContent = '🔄 Refresh';
 }
 
 function triggerGlobalGiveawayAlert(evt) {
@@ -1783,6 +1864,7 @@ async function toggleGiveawayRadar(active) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ enabled: active })
     });
+    syncRadarStatus();
   } catch (e) {}
 }
 
