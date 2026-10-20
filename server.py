@@ -5,14 +5,14 @@ INSTALL:  pip install -r requirements.txt
 RUN:      python server.py
 """
 
-import os, json, time, random, threading, re, requests
+import os, json, time, random, threading, re, requests, secrets, hashlib
 try:
     from playwright.sync_api import sync_playwright
     PLAYWRIGHT_OK = True
 except ImportError:
     PLAYWRIGHT_OK = False
 import tls_client, uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -1080,22 +1080,413 @@ async def toggle_radar(req: RadarToggleRequest):
         "auto_discover_slots": radar_state.get("auto_discover_slots", True)
     }
 
-# ── TOKEN FILE ROUTES ─────────────────────────────────────────────────────────
+# ── COMMERCIAL SAAS LICENSING & MULTI-USER SYSTEM ────────────────────────────
+DATA_DIR = os.path.join(BASE_DIR, "data")
+LICENSES_FILE = os.path.join(DATA_DIR, "licenses.json")
+USERS_DIR = os.path.join(DATA_DIR, "users")
+
+os.makedirs(DATA_DIR, exist_ok=True)
+os.makedirs(USERS_DIR, exist_ok=True)
+
+DEFAULT_ADMIN_KEY = os.environ.get("ADMIN_KEY", "admin_super_secret_2026")
+
+def generate_key_string(prefix="KICK-VIP") -> str:
+    """Generates a clean license key like KICK-VIP-7F9A-4B2C-9E1D."""
+    p1 = secrets.token_hex(2).upper()
+    p2 = secrets.token_hex(2).upper()
+    p3 = secrets.token_hex(2).upper()
+    return f"{prefix}-{p1}-{p2}-{p3}"
+
+def get_user_data_dir(license_key: str) -> str:
+    """Returns the isolated private directory for a user based on their license key hash."""
+    hashed = hashlib.sha256(license_key.encode("utf-8")).hexdigest()[:16]
+    user_dir = os.path.join(USERS_DIR, hashed)
+    os.makedirs(user_dir, exist_ok=True)
+    return user_dir
+
+def load_licenses_db() -> Dict[str, Any]:
+    if os.path.exists(LICENSES_FILE):
+        try:
+            with open(LICENSES_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {
+        "admin_key": DEFAULT_ADMIN_KEY,
+        "licenses": {}
+    }
+
+def save_licenses_db(db: Dict[str, Any]):
+    try:
+        with open(LICENSES_FILE, "w", encoding="utf-8") as f:
+            json.dump(db, f, indent=2)
+    except Exception:
+        pass
+
+def create_license_record(
+    note: str = "",
+    duration_days: Optional[int] = 30,
+    max_tokens: int = 50,
+    username: str = "",
+    password: str = ""
+) -> Dict[str, Any]:
+    db = load_licenses_db()
+    key = generate_key_string()
+    while key in db["licenses"]:
+        key = generate_key_string()
+
+    now = int(time.time())
+    expires_at = None
+    if duration_days is not None and duration_days > 0:
+        expires_at = now + (duration_days * 86400)
+
+    lic_data = {
+        "key": key,
+        "username": username.strip(),
+        "password": password.strip(),
+        "note": note.strip(),
+        "created_at": now,
+        "duration_days": duration_days,
+        "expires_at": expires_at,
+        "max_tokens": max_tokens,
+        "status": "active",
+        "last_login": 0,
+        "last_ip": ""
+    }
+    db["licenses"][key] = lic_data
+    save_licenses_db(db)
+
+    # Initialize private user folder
+    user_dir = get_user_data_dir(key)
+    tokens_file = os.path.join(user_dir, "tokens.txt")
+    if not os.path.exists(tokens_file):
+        with open(tokens_file, "w", encoding="utf-8") as f:
+            f.write("")
+
+    return lic_data
+
+def authenticate_user(credential: str, password: Optional[str] = None) -> Dict[str, Any]:
+    cred = (credential or "").strip()
+    db = load_licenses_db()
+    admin_key = db.get("admin_key", DEFAULT_ADMIN_KEY)
+
+    # Check Master Admin Key
+    if cred == admin_key:
+        return {
+            "ok": True,
+            "is_admin": True,
+            "key": "ADMIN",
+            "role": "admin",
+            "username": "Administrator",
+            "status": "active"
+        }
+
+    # Check License Key directly
+    lic = db.get("licenses", {}).get(cred)
+    
+    # Or Check Username + Password
+    if not lic and password is not None:
+        for k, l_data in db.get("licenses", {}).items():
+            if l_data.get("username") and l_data.get("username").lower() == cred.lower():
+                if l_data.get("password") == password:
+                    lic = l_data
+                    cred = k
+                break
+
+    if not lic:
+        return {"ok": False, "error": "Invalid License Key or Username"}
+
+    if lic.get("status") == "suspended":
+        return {"ok": False, "error": "This license has been suspended by the administrator"}
+
+    now = int(time.time())
+    expires_at = lic.get("expires_at")
+    if expires_at and now > expires_at:
+        lic["status"] = "expired"
+        save_licenses_db(db)
+        return {"ok": False, "error": "This license has expired. Please contact seller to renew"}
+
+    # Update last login
+    lic["last_login"] = now
+    save_licenses_db(db)
+
+    # Calculate remaining days
+    remaining_days = None
+    if expires_at:
+        remaining_days = max(0, round((expires_at - now) / 86400, 1))
+
+    return {
+        "ok": True,
+        "is_admin": False,
+        "key": lic["key"],
+        "username": lic.get("username") or lic["key"],
+        "note": lic.get("note", ""),
+        "duration_days": lic.get("duration_days"),
+        "expires_at": expires_at,
+        "remaining_days": remaining_days,
+        "max_tokens": lic.get("max_tokens", 0),
+        "status": lic.get("status", "active")
+    }
+
+def get_request_auth(request: Request) -> Dict[str, Any]:
+    """Extracts and validates user or admin auth from headers or cookies."""
+    auth_header = request.headers.get("Authorization", "")
+    token = None
+    if auth_header.startswith("Bearer "):
+        token = auth_header[7:].strip()
+    if not token:
+        token = request.headers.get("X-License-Key")
+    if not token:
+        token = request.cookies.get("kick_license_key")
+
+    if not token:
+        return {"authenticated": False, "is_admin": False, "user": None}
+
+    auth_res = authenticate_user(token)
+    if not auth_res.get("ok"):
+        return {"authenticated": False, "is_admin": False, "error": auth_res.get("error")}
+
+    return {
+        "authenticated": True,
+        "is_admin": auth_res.get("is_admin", False),
+        "user": auth_res,
+        "key": token
+    }
+
+def get_tokens_filepath(user_auth: Dict[str, Any]) -> str:
+    """Returns the isolated tokens.txt file path for the authenticated user, or default."""
+    if user_auth.get("authenticated") and not user_auth.get("is_admin"):
+        key = user_auth.get("key")
+        if key:
+            u_dir = get_user_data_dir(key)
+            return os.path.join(u_dir, "tokens.txt")
+    return TOKENS_FILE
+
+def get_user_cache_filepath(user_auth: Dict[str, Any]) -> str:
+    """Returns the isolated cache.json file path for the authenticated user, or default."""
+    if user_auth.get("authenticated") and not user_auth.get("is_admin"):
+        key = user_auth.get("key")
+        if key:
+            u_dir = get_user_data_dir(key)
+            return os.path.join(u_dir, "token_cache.json")
+    return DISK_CACHE_FILE
+
+class LoginRequest(BaseModel):
+    key: Optional[str] = None
+    username: Optional[str] = None
+    password: Optional[str] = None
+
+@app.post("/api/auth/login")
+async def auth_login(req: LoginRequest, request: Request):
+    client_ip = request.client.host if request.client else ""
+    if req.key:
+        auth_res = authenticate_user(req.key.strip())
+    elif req.username and req.password:
+        auth_res = authenticate_user(req.username.strip(), req.password.strip())
+    else:
+        return {"ok": False, "error": "Please provide a License Key or Username + Password"}
+
+    if not auth_res.get("ok"):
+        return auth_res
+
+    # Record IP
+    if not auth_res.get("is_admin"):
+        db = load_licenses_db()
+        key = auth_res["key"]
+        if key in db.get("licenses", {}):
+            db["licenses"][key]["last_ip"] = client_ip
+            save_licenses_db(db)
+
+    return auth_res
+
+@app.get("/api/auth/me")
+async def auth_me(request: Request):
+    user_auth = get_request_auth(request)
+    if not user_auth.get("authenticated"):
+        return {"ok": False, "authenticated": False, "error": user_auth.get("error", "Not authenticated")}
+    return {
+        "ok": True,
+        "authenticated": True,
+        "is_admin": user_auth.get("is_admin", False),
+        "user": user_auth.get("user")
+    }
+
+class CreateLicenseRequest(BaseModel):
+    note: Optional[str] = ""
+    duration_days: Optional[int] = 30
+    max_tokens: Optional[int] = 50
+    username: Optional[str] = ""
+    password: Optional[str] = ""
+    count: Optional[int] = 1
+
+@app.post("/api/admin/licenses/create")
+async def admin_create_license(req: CreateLicenseRequest, request: Request):
+    admin_auth = get_request_auth(request)
+    if not admin_auth.get("is_admin"):
+        return {"ok": False, "error": "Unauthorized: Master Admin access required"}
+
+    count = max(1, min(req.count or 1, 50))
+    created_list = []
+    for _ in range(count):
+        lic = create_license_record(
+            note=req.note or "",
+            duration_days=req.duration_days,
+            max_tokens=req.max_tokens if req.max_tokens is not None else 50,
+            username=req.username or "",
+            password=req.password or ""
+        )
+        created_list.append(lic)
+
+    return {"ok": True, "created": created_list, "count": len(created_list)}
+
+@app.get("/api/admin/licenses")
+async def admin_get_licenses(request: Request):
+    admin_auth = get_request_auth(request)
+    if not admin_auth.get("is_admin"):
+        return {"ok": False, "error": "Unauthorized: Master Admin access required"}
+
+    db = load_licenses_db()
+    licenses = list(db.get("licenses", {}).values())
+    now = int(time.time())
+
+    for lic in licenses:
+        key = lic["key"]
+        u_dir = get_user_data_dir(key)
+        t_file = os.path.join(u_dir, "tokens.txt")
+        count = 0
+        if os.path.exists(t_file):
+            try:
+                with open(t_file, "r", encoding="utf-8") as f:
+                    count = len([x for x in f if x.strip()])
+            except Exception:
+                pass
+        lic["tokens_count"] = count
+
+        if lic.get("expires_at") and now > lic["expires_at"]:
+            lic["status"] = "expired"
+
+    total = len(licenses)
+    active = sum(1 for l in licenses if l.get("status") == "active")
+    expired = sum(1 for l in licenses if l.get("status") == "expired")
+    suspended = sum(1 for l in licenses if l.get("status") == "suspended")
+
+    licenses.sort(key=lambda x: x.get("created_at", 0), reverse=True)
+
+    return {
+        "ok": True,
+        "stats": {
+            "total": total,
+            "active": active,
+            "expired": expired,
+            "suspended": suspended
+        },
+        "licenses": licenses
+    }
+
+class UpdateLicenseRequest(BaseModel):
+    key: str
+    action: str  # "suspend", "activate", "extend", "set_lifetime", "delete", "update_tokens"
+    days: Optional[int] = 30
+    max_tokens: Optional[int] = None
+    note: Optional[str] = None
+
+@app.post("/api/admin/licenses/update")
+async def admin_update_license(req: UpdateLicenseRequest, request: Request):
+    admin_auth = get_request_auth(request)
+    if not admin_auth.get("is_admin"):
+        return {"ok": False, "error": "Unauthorized: Master Admin access required"}
+
+    db = load_licenses_db()
+    lic = db.get("licenses", {}).get(req.key.strip())
+    if not lic:
+        return {"ok": False, "error": f"License '{req.key}' not found"}
+
+    now = int(time.time())
+    if req.action == "suspend":
+        lic["status"] = "suspended"
+    elif req.action == "activate":
+        lic["status"] = "active"
+        if lic.get("expires_at") and now > lic["expires_at"]:
+            lic["expires_at"] = now + ((req.days or 30) * 86400)
+    elif req.action == "extend":
+        base_time = max(now, lic.get("expires_at") or now)
+        lic["expires_at"] = base_time + ((req.days or 30) * 86400)
+        lic["status"] = "active"
+    elif req.action == "set_lifetime":
+        lic["expires_at"] = None
+        lic["duration_days"] = None
+        lic["status"] = "active"
+    elif req.action == "delete":
+        u_dir = get_user_data_dir(req.key)
+        import shutil
+        if os.path.exists(u_dir):
+            try:
+                shutil.rmtree(u_dir)
+            except Exception:
+                pass
+        del db["licenses"][req.key]
+        save_licenses_db(db)
+        return {"ok": True, "action": "deleted", "key": req.key}
+    elif req.action == "update_tokens" and req.max_tokens is not None:
+        lic["max_tokens"] = req.max_tokens
+
+    if req.note is not None:
+        lic["note"] = req.note
+
+    save_licenses_db(db)
+    return {"ok": True, "license": lic}
+
+class ChangeAdminKeyRequest(BaseModel):
+    new_admin_key: str
+
+@app.post("/api/admin/change_key")
+async def admin_change_key(req: ChangeAdminKeyRequest, request: Request):
+    admin_auth = get_request_auth(request)
+    if not admin_auth.get("is_admin"):
+        return {"ok": False, "error": "Unauthorized: Master Admin access required"}
+
+    new_key = req.new_admin_key.strip()
+    if len(new_key) < 6:
+        return {"ok": False, "error": "Admin key must be at least 6 characters"}
+
+    db = load_licenses_db()
+    db["admin_key"] = new_key
+    save_licenses_db(db)
+    return {"ok": True, "message": "Admin Master Key updated successfully"}
+
+# ── TOKEN FILE ROUTES (USER ISOLATED) ─────────────────────────────────────────
 
 @app.get("/api/tokens/load")
-async def load_tokens():
-    if not os.path.exists(TOKENS_FILE):
+async def load_tokens(request: Request):
+    user_auth = get_request_auth(request)
+    db = load_licenses_db()
+    if db.get("licenses") and not user_auth.get("authenticated"):
+        return {"ok": False, "error": "Authentication required. Please enter your License Key."}
+
+    user_tokens_path = get_tokens_filepath(user_auth)
+    if not os.path.exists(user_tokens_path):
         return {"ok": True, "tokens": [], "accounts": []}
-    with open(TOKENS_FILE, "r", encoding="utf-8") as f:
+
+    with open(user_tokens_path, "r", encoding="utf-8") as f:
         tokens = [line.strip() for line in f if line.strip()]
-    
-    disk_cache = load_disk_cache()
+
+    user_cache_path = get_user_cache_filepath(user_auth)
+    cache = {}
+    if os.path.exists(user_cache_path):
+        try:
+            with open(user_cache_path, "r", encoding="utf-8") as f:
+                cache = json.load(f)
+        except Exception:
+            pass
+    if not cache:
+        cache = load_disk_cache()
+
     accounts_list = []
     for i, t in enumerate(tokens):
         bare = t.strip()
         if ":" in bare: bare = bare.split(":")[-1]
         if "|" in bare: bare = bare.split("|")[-1]
-        info = disk_cache.get(bare, {})
+        info = cache.get(bare, {})
         username = info.get("username") if isinstance(info, dict) else ""
         uid = info.get("id") if isinstance(info, dict) else ""
         if not username:
@@ -1110,9 +1501,25 @@ async def load_tokens():
     return {"ok": True, "tokens": tokens, "accounts": accounts_list}
 
 @app.post("/api/tokens/save")
-async def save_tokens(req: SaveTokensRequest):
+async def save_tokens(req: SaveTokensRequest, request: Request):
+    user_auth = get_request_auth(request)
+    db = load_licenses_db()
+    if db.get("licenses") and not user_auth.get("authenticated"):
+        return {"ok": False, "error": "Authentication required"}
+
     clean = [t.strip() for t in req.tokens if t.strip()]
-    with open(TOKENS_FILE, "w", encoding="utf-8") as f:
+
+    if user_auth.get("authenticated") and not user_auth.get("is_admin"):
+        user = user_auth.get("user", {})
+        max_t = user.get("max_tokens", 0)
+        if max_t > 0 and len(clean) > max_t:
+            return {
+                "ok": False,
+                "error": f"License limit reached! Your tier allows up to {max_t} accounts, but you submitted {len(clean)}. Contact admin to upgrade."
+            }
+
+    user_tokens_path = get_tokens_filepath(user_auth)
+    with open(user_tokens_path, "w", encoding="utf-8") as f:
         f.write("\n".join(clean) + ("\n" if clean else ""))
     return {"ok": True, "saved": len(clean)}
 

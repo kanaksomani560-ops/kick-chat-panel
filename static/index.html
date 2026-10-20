@@ -1075,10 +1075,217 @@
   </div>
 </div>
 
-<header>
-  <div class="dot"></div>
-  <div class="logo">KICK CHAT PANEL PRO</div>
-  <div class="version">v5.0</div>
+<!-- 🔐 SAAS VIP LOGIN & LICENSE LOCK SCREEN OVERLAY -->
+<div id="saasLoginOverlay" style="display:none;position:fixed;inset:0;background:rgba(5,7,14,0.94);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);z-index:999999;align-items:center;justify-content:center;padding:16px;">
+  <div style="background:linear-gradient(145deg, rgba(15,23,42,0.98), rgba(10,15,28,0.98));border:1px solid rgba(16,185,129,0.35);box-shadow:0 25px 60px rgba(0,0,0,0.9), 0 0 35px rgba(16,185,129,0.15);border-radius:24px;width:100%;max-width:440px;padding:28px 24px;position:relative;">
+    
+    <div style="text-align:center;margin-bottom:20px;">
+      <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.3);padding:4px 12px;border-radius:20px;margin-bottom:12px;">
+        <span style="width:7px;height:7px;border-radius:50%;background:#10b981;box-shadow:0 0 8px #10b981;"></span>
+        <span style="font-size:10px;font-weight:800;letter-spacing:1px;color:#10b981;text-transform:uppercase;">VIP ACCESS PORTAL</span>
+      </div>
+      <h2 style="font-size:20px;font-weight:900;color:#fff;margin:0;letter-spacing:0.5px;">KICK CHAT PANEL</h2>
+      <p style="font-size:11.5px;color:var(--muted);margin:6px 0 0 0;">Enter your License Key to access your private panel</p>
+    </div>
+
+    <!-- Login Tabs -->
+    <div style="display:flex;gap:4px;background:rgba(255,255,255,0.04);padding:4px;border-radius:12px;margin-bottom:18px;border:1px solid rgba(255,255,255,0.06);">
+      <button class="btn btn-dark active" id="tabKeyBtn" onclick="switchLoginTab('key')" style="flex:1;font-size:10px;padding:6px;border-radius:8px;">🔑 License Key</button>
+      <button class="btn btn-dark" id="tabUserBtn" onclick="switchLoginTab('user')" style="flex:1;font-size:10px;padding:6px;border-radius:8px;">👤 User / Pass</button>
+      <button class="btn btn-dark" id="tabAdminBtn" onclick="switchLoginTab('admin')" style="flex:1;font-size:10px;padding:6px;border-radius:8px;">👑 Admin</button>
+    </div>
+
+    <!-- Tab 1: License Key Login -->
+    <div id="loginTabKey">
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <label style="font-size:10px;color:var(--muted);font-weight:700;letter-spacing:0.5px;">YOUR LICENSE KEY</label>
+        <input type="text" id="licenseKeyInput" placeholder="KICK-VIP-XXXX-YYYY-ZZZZ" style="padding:12px 14px;font-size:13px;font-family:var(--mono);text-transform:uppercase;letter-spacing:1.5px;border-radius:12px;background:rgba(255,255,255,0.05);border:1px solid rgba(16,185,129,0.3);color:#fff;" onkeypress="if(event.key==='Enter')submitLicenseLogin()"/>
+        <button class="btn btn-green" onclick="submitLicenseLogin()" style="padding:12px;font-size:12px;font-weight:800;letter-spacing:0.8px;border-radius:12px;margin-top:6px;box-shadow:0 0 20px rgba(16,185,129,0.35);">
+          🔓 UNLOCK VIP PANEL
+        </button>
+      </div>
+    </div>
+
+    <!-- Tab 2: Username & Password Login -->
+    <div id="loginTabUser" style="display:none;">
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div>
+          <label style="font-size:10px;color:var(--muted);font-weight:700;">USERNAME</label>
+          <input type="text" id="usernameInput" placeholder="Enter username..." style="width:100%;padding:10px 12px;font-size:12px;border-radius:10px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);color:#fff;margin-top:4px;" />
+        </div>
+        <div>
+          <label style="font-size:10px;color:var(--muted);font-weight:700;">PASSWORD</label>
+          <input type="password" id="passwordInput" placeholder="Enter password..." style="width:100%;padding:10px 12px;font-size:12px;border-radius:10px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);color:#fff;margin-top:4px;" onkeypress="if(event.key==='Enter')submitUserPassLogin()"/>
+        </div>
+        <button class="btn btn-blue" onclick="submitUserPassLogin()" style="padding:12px;font-size:12px;font-weight:800;border-radius:12px;margin-top:4px;">
+          🔓 LOGIN WITH ACCOUNT
+        </button>
+      </div>
+    </div>
+
+    <!-- Tab 3: Master Admin Login -->
+    <div id="loginTabAdmin" style="display:none;">
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div>
+          <label style="font-size:10px;color:#38bdf8;font-weight:700;">MASTER ADMIN KEY</label>
+          <input type="password" id="adminKeyInput" placeholder="Enter Admin Secret Key..." style="width:100%;padding:10px 12px;font-size:12px;border-radius:10px;background:rgba(56,189,248,0.05);border:1px solid rgba(56,189,248,0.3);color:#fff;margin-top:4px;" onkeypress="if(event.key==='Enter')submitAdminLogin()"/>
+        </div>
+        <button class="btn btn-dark" onclick="submitAdminLogin()" style="padding:12px;font-size:12px;font-weight:800;border-radius:12px;border-color:#38bdf8;color:#38bdf8;margin-top:4px;">
+          👑 OPEN ADMIN PORTAL
+        </button>
+      </div>
+    </div>
+
+    <div id="loginErrorMsg" style="color:#ff5733;font-size:11px;margin-top:12px;text-align:center;display:none;"></div>
+
+    <div style="margin-top:20px;padding-top:16px;border-top:1px solid rgba(255,255,255,0.06);text-align:center;font-size:10px;color:var(--muted);">
+      Don't have a license key yet? <br/>
+      <span style="color:#10b981;font-weight:700;">Contact Administrator to purchase your VIP license</span>
+    </div>
+  </div>
+</div>
+
+<!-- 👑 MASTER ADMIN LICENSE MANAGEMENT PORTAL MODAL -->
+<div id="adminPortalModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);z-index:999998;align-items:center;justify-content:center;padding:16px;">
+  <div style="background:#0c1017;border:1px solid rgba(56,189,248,0.3);box-shadow:0 30px 80px rgba(0,0,0,0.95), 0 0 40px rgba(56,189,248,0.12);border-radius:24px;width:100%;max-width:960px;max-height:92vh;display:flex;flex-direction:column;overflow:hidden;">
+    
+    <!-- Admin Header -->
+    <div style="padding:16px 22px;border-bottom:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.02);">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:20px;">👑</span>
+        <div>
+          <div style="font-size:15px;font-weight:900;color:#fff;letter-spacing:0.5px;">MASTER ADMIN LICENSE PORTAL</div>
+          <div style="font-size:10.5px;color:var(--muted);">Generate, sell & manage customer licenses with isolated token storage</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <button class="btn btn-dark" onclick="refreshAdminLicenses()" style="font-size:10px;padding:6px 10px;">🔄 Refresh</button>
+        <button class="btn btn-dark" onclick="closeAdminPortal()" style="padding:6px 12px;font-size:12px;border-radius:8px;">✕</button>
+      </div>
+    </div>
+
+    <!-- Admin Body (Scrollable) -->
+    <div style="padding:20px;overflow-y:auto;display:flex;flex-direction:column;gap:18px;">
+      
+      <!-- Stats Row -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));gap:10px;">
+        <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);padding:12px 16px;border-radius:14px;">
+          <div style="font-size:10px;color:var(--muted);text-transform:uppercase;font-weight:700;">TOTAL LICENSES</div>
+          <div style="font-size:22px;font-weight:900;color:#fff;margin-top:2px;" id="statTotalLicenses">0</div>
+        </div>
+        <div style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.25);padding:12px 16px;border-radius:14px;">
+          <div style="font-size:10px;color:#10b981;text-transform:uppercase;font-weight:700;">ACTIVE CUSTOMERS</div>
+          <div style="font-size:22px;font-weight:900;color:#10b981;margin-top:2px;" id="statActiveLicenses">0</div>
+        </div>
+        <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);padding:12px 16px;border-radius:14px;">
+          <div style="font-size:10px;color:#ef4444;text-transform:uppercase;font-weight:700;">EXPIRED / SUSPENDED</div>
+          <div style="font-size:22px;font-weight:900;color:#ef4444;margin-top:2px;" id="statExpiredLicenses">0</div>
+        </div>
+      </div>
+
+      <!-- Generate License Form Card -->
+      <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(56,189,248,0.2);padding:16px 18px;border-radius:18px;">
+        <div style="font-size:12px;font-weight:800;color:#38bdf8;margin-bottom:12px;letter-spacing:0.5px;display:flex;align-items:center;gap:6px;">
+          <span>⚡</span> GENERATE NEW LICENSE KEY
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:12px;">
+          <div>
+            <label style="font-size:10px;color:var(--muted);display:block;margin-bottom:4px;font-weight:700;">DURATION</label>
+            <select id="genDurationSelect" style="width:100%;padding:8px 10px;font-size:11px;border-radius:10px;background:#161f30;border:1px solid rgba(255,255,255,0.12);color:#fff;">
+              <option value="1">1 Day (Trial)</option>
+              <option value="7">7 Days (1 Week)</option>
+              <option value="30" selected>30 Days (1 Month)</option>
+              <option value="90">90 Days (3 Months)</option>
+              <option value="365">365 Days (1 Year)</option>
+              <option value="0">♾️ Lifetime VIP</option>
+            </select>
+          </div>
+
+          <div>
+            <label style="font-size:10px;color:var(--muted);display:block;margin-bottom:4px;font-weight:700;">MAX TOKENS TIER</label>
+            <select id="genMaxTokensSelect" style="width:100%;padding:8px 10px;font-size:11px;border-radius:10px;background:#161f30;border:1px solid rgba(255,255,255,0.12);color:#fff;">
+              <option value="10">10 Tokens</option>
+              <option value="25">25 Tokens</option>
+              <option value="50" selected>50 Tokens</option>
+              <option value="100">100 Tokens</option>
+              <option value="250">250 Tokens</option>
+              <option value="0">♾️ Unlimited Tokens</option>
+            </select>
+          </div>
+
+          <div>
+            <label style="font-size:10px;color:var(--muted);display:block;margin-bottom:4px;font-weight:700;">BUYER NOTE / NAME</label>
+            <input type="text" id="genBuyerNoteInput" placeholder="e.g. Discord @crypto_king" style="width:100%;padding:8px 10px;font-size:11px;border-radius:10px;background:#161f30;border:1px solid rgba(255,255,255,0.12);color:#fff;" />
+          </div>
+
+          <div>
+            <label style="font-size:10px;color:var(--muted);display:block;margin-bottom:4px;font-weight:700;">QUANTITY</label>
+            <select id="genCountSelect" style="width:100%;padding:8px 10px;font-size:11px;border-radius:10px;background:#161f30;border:1px solid rgba(255,255,255,0.12);color:#fff;">
+              <option value="1">1 Key</option>
+              <option value="3">3 Keys (Bulk)</option>
+              <option value="5">5 Keys (Bulk)</option>
+              <option value="10">10 Keys (Bulk)</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display:flex;justify-content:flex-end;margin-top:14px;">
+          <button class="btn btn-green" onclick="generateLicenseFromForm()" style="padding:9px 18px;font-size:11px;font-weight:800;border-radius:10px;">
+            ⚡ CREATE LICENSE KEY(S)
+          </button>
+        </div>
+
+        <!-- Newly Generated Result Box -->
+        <div id="genResultBox" style="display:none;margin-top:12px;padding:12px;background:rgba(16,185,129,0.1);border:1px solid #10b981;border-radius:12px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-size:11px;font-weight:800;color:#10b981;">🎉 NEW LICENSE(S) GENERATED:</span>
+            <button class="btn btn-dark" onclick="copyLastGeneratedKeys()" style="font-size:9.5px;padding:4px 10px;">📋 Copy for Buyer</button>
+          </div>
+          <div id="genResultText" style="margin-top:6px;font-family:var(--mono);font-size:12px;color:#fff;font-weight:700;word-break:break-all;"></div>
+        </div>
+      </div>
+
+      <!-- Manage Licenses Table Section -->
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+          <div style="font-size:12px;font-weight:800;color:#fff;letter-spacing:0.5px;">ALL CUSTOMER LICENSES</div>
+          <input type="text" id="adminSearchInput" placeholder="Search by key, note..." oninput="filterAdminLicensesTable()" style="padding:6px 10px;font-size:11px;border-radius:8px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);color:#fff;min-width:220px;" />
+        </div>
+
+        <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.08);border-radius:14px;overflow-x:auto;">
+          <table style="width:100%;border-collapse:collapse;font-size:11px;text-align:left;">
+            <thead>
+              <tr style="border-bottom:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);color:var(--muted);">
+                <th style="padding:10px 12px;font-weight:700;">LICENSE KEY</th>
+                <th style="padding:10px 12px;font-weight:700;">BUYER / NOTE</th>
+                <th style="padding:10px 12px;font-weight:700;">EXPIRES</th>
+                <th style="padding:10px 12px;font-weight:700;">TOKENS</th>
+                <th style="padding:10px 12px;font-weight:700;">STATUS</th>
+                <th style="padding:10px 12px;font-weight:700;text-align:right;">ACTIONS</th>
+              </tr>
+            </thead>
+            <tbody id="adminLicensesTbody">
+              <tr><td colspan="6" style="padding:20px;text-align:center;color:var(--muted);">Loading licenses...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+<header style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:1px solid rgba(255,255,255,0.08);background:rgba(10,10,10,0.96);position:sticky;top:0;z-index:999;">
+  <div style="display:flex;align-items:center;gap:10px;">
+    <div class="dot"></div>
+    <div class="logo">KICK CHAT PANEL PRO</div>
+    <div class="version">v5.0</div>
+  </div>
+  <div id="authHeaderBar" style="display:flex;align-items:center;gap:8px;">
+    <!-- Populated by checkAuthSession() -->
+  </div>
 </header>
 
 <div class="layout">
@@ -2076,6 +2283,416 @@ function loadRadarVisibility() {
   toggleRadarVisibility(show);
 }
 
+// ── SAAS MULTI-USER & LICENSING CLIENT ENGINE ────────────────────────────────
+let currentAuthSession = null;
+let lastCreatedLicenses = [];
+let allAdminLicenses = [];
+
+// Intercept window.fetch to automatically append Authorization: Bearer <key>
+const _origFetch = window.fetch;
+window.fetch = function(url, options = {}) {
+  const sessionKey = localStorage.getItem('kick_license_session');
+  if (sessionKey) {
+    if (!options.headers) options.headers = {};
+    if (options.headers instanceof Headers) {
+      if (!options.headers.has('Authorization')) {
+        options.headers.set('Authorization', 'Bearer ' + sessionKey);
+      }
+    } else if (Array.isArray(options.headers)) {
+      options.headers.push(['Authorization', 'Bearer ' + sessionKey]);
+    } else {
+      if (!options.headers['Authorization']) {
+        options.headers['Authorization'] = 'Bearer ' + sessionKey;
+      }
+    }
+  }
+  return _origFetch(url, options);
+};
+
+async function checkAuthSession() {
+  const sessionKey = localStorage.getItem('kick_license_session');
+  const overlay = document.getElementById('saasLoginOverlay');
+
+  if (!sessionKey) {
+    if (overlay) overlay.style.display = 'flex';
+    renderAuthHeader(null);
+    return;
+  }
+
+  try {
+    const r = await fetch(`${API}/api/auth/me`);
+    const d = await r.json();
+
+    if (d.ok && d.authenticated) {
+      currentAuthSession = d;
+      if (overlay) overlay.style.display = 'none';
+      renderAuthHeader(d);
+      // Load user private tokens
+      if (typeof loadTokensFile === 'function') {
+        loadTokensFile(true);
+      }
+    } else {
+      localStorage.removeItem('kick_license_session');
+      if (overlay) overlay.style.display = 'flex';
+      renderAuthHeader(null);
+    }
+  } catch (e) {
+    // In case offline, keep existing session
+  }
+}
+
+function renderAuthHeader(auth) {
+  const bar = document.getElementById('authHeaderBar');
+  if (!bar) return;
+
+  if (!auth || !auth.authenticated) {
+    bar.innerHTML = `
+      <button class="btn btn-green" onclick="showLoginModal()" style="font-size:10px;padding:5px 12px;font-weight:700;">
+        🔑 Login / Enter Key
+      </button>
+    `;
+    return;
+  }
+
+  if (auth.is_admin) {
+    bar.innerHTML = `
+      <span style="font-size:10px;font-weight:800;background:rgba(56,189,248,0.15);border:1px solid rgba(56,189,248,0.4);color:#38bdf8;padding:3px 8px;border-radius:12px;">
+        👑 Master Admin
+      </span>
+      <button class="btn btn-dark" onclick="openAdminPortal()" style="font-size:10px;padding:5px 10px;color:#38bdf8;border-color:rgba(56,189,248,0.4);">
+        👑 Admin Portal
+      </button>
+      <button class="btn btn-dark" onclick="logoutSession()" style="font-size:10px;padding:5px 10px;color:var(--muted);">
+        🔓 Logout
+      </button>
+    `;
+  } else {
+    const user = auth.user || {};
+    const remaining = user.remaining_days !== null && user.remaining_days !== undefined
+      ? `${user.remaining_days}d left`
+      : '♾️ Lifetime VIP';
+    const maxT = user.max_tokens ? `Max ${user.max_tokens} Accs` : '∞ Accs';
+
+    bar.innerHTML = `
+      <span style="font-size:10px;font-weight:700;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.35);color:#10b981;padding:3px 8px;border-radius:12px;">
+        🟢 ${escapeHtml(user.username || 'VIP')} · ${remaining}
+      </span>
+      <span style="font-size:9.5px;color:var(--muted);background:rgba(255,255,255,0.04);padding:3px 6px;border-radius:8px;border:1px solid rgba(255,255,255,0.08);">
+        ${maxT}
+      </span>
+      <button class="btn btn-dark" onclick="logoutSession()" style="font-size:10px;padding:5px 10px;color:var(--muted);">
+        🔓 Logout
+      </button>
+    `;
+  }
+}
+
+function showLoginModal() {
+  const overlay = document.getElementById('saasLoginOverlay');
+  if (overlay) overlay.style.display = 'flex';
+}
+
+function switchLoginTab(tab) {
+  const tKey = document.getElementById('loginTabKey');
+  const tUser = document.getElementById('loginTabUser');
+  const tAdmin = document.getElementById('loginTabAdmin');
+  const bKey = document.getElementById('tabKeyBtn');
+  const bUser = document.getElementById('tabUserBtn');
+  const bAdmin = document.getElementById('tabAdminBtn');
+
+  if (tKey) tKey.style.display = tab === 'key' ? 'block' : 'none';
+  if (tUser) tUser.style.display = tab === 'user' ? 'block' : 'none';
+  if (tAdmin) tAdmin.style.display = tab === 'admin' ? 'block' : 'none';
+
+  if (bKey) bKey.classList.toggle('active', tab === 'key');
+  if (bUser) bUser.classList.toggle('active', tab === 'user');
+  if (bAdmin) bAdmin.classList.toggle('active', tab === 'admin');
+
+  const err = document.getElementById('loginErrorMsg');
+  if (err) err.style.display = 'none';
+}
+
+async function submitLicenseLogin() {
+  const input = document.getElementById('licenseKeyInput');
+  const key = (input ? input.value : '').trim();
+  if (!key) {
+    showLoginError('Please enter your License Key');
+    return;
+  }
+  await performLogin({ key: key });
+}
+
+async function submitUserPassLogin() {
+  const u = (document.getElementById('usernameInput')?.value || '').trim();
+  const p = (document.getElementById('passwordInput')?.value || '').trim();
+  if (!u || !p) {
+    showLoginError('Please enter both username and password');
+    return;
+  }
+  await performLogin({ username: u, password: p });
+}
+
+async function submitAdminLogin() {
+  const key = (document.getElementById('adminKeyInput')?.value || '').trim();
+  if (!key) {
+    showLoginError('Please enter the Master Admin Key');
+    return;
+  }
+  await performLogin({ key: key }, true);
+}
+
+async function performLogin(payload, isAdmin = false) {
+  const err = document.getElementById('loginErrorMsg');
+  if (err) err.style.display = 'none';
+
+  try {
+    const r = await fetch(`${API}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const d = await r.json();
+
+    if (d.ok) {
+      const token = payload.key || d.key;
+      localStorage.setItem('kick_license_session', token);
+      document.getElementById('saasLoginOverlay').style.display = 'none';
+      await checkAuthSession();
+      if (d.is_admin) {
+        openAdminPortal();
+      }
+      addBotLog(`🎉 Welcome! Panel unlocked successfully (${d.username || 'VIP'})`, 'success');
+    } else {
+      showLoginError(d.error || 'Authentication failed');
+    }
+  } catch (e) {
+    showLoginError('Connection error: ' + e.message);
+  }
+}
+
+function showLoginError(msg) {
+  const err = document.getElementById('loginErrorMsg');
+  if (err) {
+    err.textContent = '❌ ' + msg;
+    err.style.display = 'block';
+  }
+}
+
+function logoutSession() {
+  if (confirm('Are you sure you want to log out of this panel?')) {
+    localStorage.removeItem('kick_license_session');
+    currentAuthSession = null;
+    document.getElementById('saasLoginOverlay').style.display = 'flex';
+    renderAuthHeader(null);
+    const tkArea = document.getElementById('tokensArea');
+    if (tkArea) tkArea.value = '';
+    accounts = [];
+    if (typeof renderAccounts === 'function') renderAccounts();
+    addBotLog('Logged out.', 'info');
+  }
+}
+
+// ── ADMIN PORTAL CLIENT FUNCTIONS ───────────────────────────────────────────
+async function openAdminPortal() {
+  const modal = document.getElementById('adminPortalModal');
+  if (modal) modal.style.display = 'flex';
+  refreshAdminLicenses();
+}
+
+function closeAdminPortal() {
+  const modal = document.getElementById('adminPortalModal');
+  if (modal) modal.style.display = 'none';
+}
+
+async function refreshAdminLicenses() {
+  try {
+    const r = await fetch(`${API}/api/admin/licenses`);
+    const d = await r.json();
+    if (d.ok) {
+      allAdminLicenses = d.licenses || [];
+      renderAdminStats(d.stats || {});
+      renderAdminLicensesTable(allAdminLicenses);
+    } else {
+      alert('Admin Error: ' + d.error);
+    }
+  } catch (e) {
+    alert('Failed to load admin licenses: ' + e.message);
+  }
+}
+
+function renderAdminStats(stats) {
+  const total = document.getElementById('statTotalLicenses');
+  const active = document.getElementById('statActiveLicenses');
+  const expired = document.getElementById('statExpiredLicenses');
+  if (total) total.textContent = stats.total || 0;
+  if (active) active.textContent = stats.active || 0;
+  if (expired) expired.textContent = (stats.expired || 0) + (stats.suspended || 0);
+}
+
+function renderAdminLicensesTable(licenses) {
+  const tbody = document.getElementById('adminLicensesTbody');
+  if (!tbody) return;
+
+  if (!licenses || !licenses.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="padding:24px;text-align:center;color:var(--muted);">No customer licenses generated yet. Create your first license above!</td></tr>';
+    return;
+  }
+
+  let html = '';
+  licenses.forEach(l => {
+    const isAct = l.status === 'active';
+    const isSusp = l.status === 'suspended';
+    const now = Math.floor(Date.now() / 1000);
+    const isExp = l.expires_at && now > l.expires_at;
+
+    let statusBadge = '<span style="color:#10b981;font-weight:700;">🟢 Active</span>';
+    if (isSusp) statusBadge = '<span style="color:#f59e0b;font-weight:700;">⏸️ Suspended</span>';
+    else if (isExp) statusBadge = '<span style="color:#ef4444;font-weight:700;">🔴 Expired</span>';
+
+    let expStr = '♾️ Lifetime';
+    if (l.expires_at) {
+      const remDays = Math.max(0, Math.round((l.expires_at - now) / 86400));
+      expStr = `${new Date(l.expires_at * 1000).toLocaleDateString()} (${remDays}d)`;
+    }
+
+    const maxT = l.max_tokens ? `${l.max_tokens} max` : '∞';
+    const tokensDisplay = `${l.tokens_count || 0} / ${maxT}`;
+
+    html += `
+      <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+        <td style="padding:10px 12px;font-family:var(--mono);color:#fff;font-weight:700;">
+          ${escapeHtml(l.key)}
+          <span onclick="copyTextToClipboard('${escapeHtml(l.key)}')" style="cursor:pointer;margin-left:4px;color:#38bdf8;" title="Copy Key">📋</span>
+        </td>
+        <td style="padding:10px 12px;color:#e2e8f0;">${escapeHtml(l.note || '—')}</td>
+        <td style="padding:10px 12px;color:var(--muted);">${expStr}</td>
+        <td style="padding:10px 12px;color:#10b981;font-weight:700;">${tokensDisplay}</td>
+        <td style="padding:10px 12px;">${statusBadge}</td>
+        <td style="padding:10px 12px;text-align:right;">
+          <div style="display:inline-flex;gap:4px;">
+            <button class="btn btn-dark" onclick="copyBuyerWelcomeMessage('${escapeHtml(l.key)}', '${l.duration_days || 0}', '${escapeHtml(l.note || '')}')" style="font-size:9.5px;padding:3px 7px;" title="Copy welcome message for buyer">📋 Copy</button>
+            ${isAct ? `<button class="btn btn-dark" onclick="adminUpdateLicense('${escapeHtml(l.key)}', 'suspend')" style="font-size:9.5px;padding:3px 7px;color:#f59e0b;" title="Suspend license">⏸️</button>` : `<button class="btn btn-dark" onclick="adminUpdateLicense('${escapeHtml(l.key)}', 'activate')" style="font-size:9.5px;padding:3px 7px;color:#10b981;" title="Activate license">▶️</button>`}
+            <button class="btn btn-dark" onclick="adminUpdateLicense('${escapeHtml(l.key)}', 'extend', 30)" style="font-size:9.5px;padding:3px 7px;color:#38bdf8;" title="+30 Days renewal">+30d</button>
+            <button class="btn btn-dark" onclick="adminDeleteLicense('${escapeHtml(l.key)}')" style="font-size:9.5px;padding:3px 7px;color:#ef4444;" title="Delete license & data">🗑️</button>
+          </div>
+        </td>
+      </tr>
+    `;
+  });
+  tbody.innerHTML = html;
+}
+
+function filterAdminLicensesTable() {
+  const query = (document.getElementById('adminSearchInput')?.value || '').trim().toLowerCase();
+  if (!query) {
+    renderAdminLicensesTable(allAdminLicenses);
+    return;
+  }
+  const filtered = allAdminLicenses.filter(l =>
+    (l.key || '').toLowerCase().includes(query) ||
+    (l.note || '').toLowerCase().includes(query) ||
+    (l.username || '').toLowerCase().includes(query)
+  );
+  renderAdminLicensesTable(filtered);
+}
+
+async function generateLicenseFromForm() {
+  const duration = parseInt(document.getElementById('genDurationSelect')?.value || '30');
+  const maxTokens = parseInt(document.getElementById('genMaxTokensSelect')?.value || '50');
+  const note = (document.getElementById('genBuyerNoteInput')?.value || '').trim();
+  const count = parseInt(document.getElementById('genCountSelect')?.value || '1');
+
+  try {
+    const r = await fetch(`${API}/api/admin/licenses/create`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        duration_days: duration === 0 ? null : duration,
+        max_tokens: maxTokens,
+        note: note,
+        count: count
+      })
+    });
+    const d = await r.json();
+
+    if (d.ok) {
+      lastCreatedLicenses = d.created || [];
+      const resBox = document.getElementById('genResultBox');
+      const resText = document.getElementById('genResultText');
+      if (resBox) resBox.style.display = 'block';
+      if (resText) {
+        resText.innerHTML = lastCreatedLicenses.map(l => `<div>🔑 <b>${escapeHtml(l.key)}</b> (Duration: ${l.duration_days ? l.duration_days + ' Days' : 'Lifetime'} | Max ${l.max_tokens || '∞'} Accs)</div>`).join('');
+      }
+      refreshAdminLicenses();
+      document.getElementById('genBuyerNoteInput').value = '';
+    } else {
+      alert('Error: ' + d.error);
+    }
+  } catch (e) {
+    alert('Failed to generate license: ' + e.message);
+  }
+}
+
+function copyLastGeneratedKeys() {
+  if (!lastCreatedLicenses.length) return;
+  const origin = window.location.origin;
+  let text = '🎉 YOUR KICK CHAT PANEL VIP LICENSE:\n\n';
+  lastCreatedLicenses.forEach((l, idx) => {
+    const dur = l.duration_days ? `${l.duration_days} Days` : '♾️ Lifetime VIP';
+    const limit = l.max_tokens ? `${l.max_tokens} Accounts` : 'Unlimited';
+    text += `🔑 License Key: ${l.key}\n⏳ Duration: ${dur}\n⚡ Limit: ${limit}\n🌐 Panel URL: ${origin}\n\n`;
+  });
+  text += 'How to use:\n1. Open the Panel URL\n2. Paste your License Key to unlock\n3. Add your tokens and enjoy!';
+  copyTextToClipboard(text);
+  alert('Copied ready-to-send license message to clipboard!');
+}
+
+function copyBuyerWelcomeMessage(key, durationDays, note) {
+  const origin = window.location.origin;
+  const dur = parseInt(durationDays) > 0 ? `${durationDays} Days` : '♾️ Lifetime VIP';
+  const text = `🎉 YOUR KICK CHAT PANEL VIP LICENSE:\n\n🔑 License Key: ${key}\n⏳ Duration: ${dur}\n🌐 Access Panel: ${origin}\n\nInstructions:\n1. Open the Panel link\n2. Enter your License Key\n3. Your private tokens and dashboard will unlock immediately!`;
+  copyTextToClipboard(text);
+  alert('Copied buyer welcome message to clipboard!');
+}
+
+async function adminUpdateLicense(key, action, days = 30) {
+  try {
+    const r = await fetch(`${API}/api/admin/licenses/update`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key: key, action: action, days: days })
+    });
+    const d = await r.json();
+    if (d.ok) {
+      refreshAdminLicenses();
+    } else {
+      alert('Error: ' + d.error);
+    }
+  } catch (e) {
+    alert('Failed to update license: ' + e.message);
+  }
+}
+
+async function adminDeleteLicense(key) {
+  if (confirm(`Are you sure you want to permanently DELETE license ${key} and wipe their user data?`)) {
+    await adminUpdateLicense(key, 'delete');
+  }
+}
+
+function copyTextToClipboard(text) {
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text);
+  } else {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+  }
+}
+
+
 const API = '';
 let chatroomId = null, userId = null, channelName = '', accounts = [], selectedAccount = null, wordBank = [], selectedWords = [], templates = [], isSending = false;
 let selectedTokenIndices = new Set();
@@ -3029,6 +3646,7 @@ window.onload = () => {
   loadWordBank();
   loadUserPresets();
   loadAIKeys();
+  checkAuthSession();
   loadRadarVisibility();
   loadFollowBotDisplay();
   loadAccountGroups();
