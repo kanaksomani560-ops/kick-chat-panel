@@ -656,6 +656,215 @@ async def ai_generate(req: AIGenerateRequest):
         return {"ok": False, "error": f"AI Error: {str(e)}"}
 
 
+
+# ── MULTI-STREAM GLOBAL GIVEAWAY RADAR ──────────────────────────────────────
+RADAR_WATCHLIST_FILE = "radar_watchlist.json"
+DEFAULT_WATCHLIST = [
+    "adinross", "n3on", "trainwreckstv", "roshtein", "cuffem",
+    "cheesur", "westcol", "xqc", "mellstroy", "konvy", "rangesh"
+]
+
+radar_state = {
+    "enabled": True,
+    "auto_enter": False,
+    "watchlist": list(DEFAULT_WATCHLIST),
+    "channel_cache": {},
+    "processed_msg_ids": set(),
+    "events": []
+}
+
+def load_radar_state():
+    if os.path.exists(RADAR_WATCHLIST_FILE):
+        try:
+            with open(RADAR_WATCHLIST_FILE, "r", encoding="utf-8") as f:
+                d = json.load(f)
+                radar_state["watchlist"] = d.get("watchlist", DEFAULT_WATCHLIST)
+                radar_state["auto_enter"] = d.get("auto_enter", False)
+                radar_state["enabled"] = d.get("enabled", True)
+        except Exception:
+            pass
+
+def save_radar_state():
+    try:
+        with open(RADAR_WATCHLIST_FILE, "w", encoding="utf-8") as f:
+            json.dump({
+                "watchlist": radar_state["watchlist"],
+                "auto_enter": radar_state["auto_enter"],
+                "enabled": radar_state["enabled"]
+            }, f, indent=2)
+    except Exception:
+        pass
+
+load_radar_state()
+
+GIVEAWAY_PATTERNS = [
+    re.compile(r"""(?:type|escribe|escribir|command|keyword|palabra|kw|key)\s*(?:is|es|[:=\-])?\s*["']?([!#]?[a-zA-Z0-9_\-]+)""", re.I),
+    re.compile(r"""([!#][a-zA-Z0-9_\-]+)\s*(?:to\s+enter|para\s+participar|to\s+win|for\s+giveaway)""", re.I),
+    re.compile(r"""(?:giveaway|sorteo).*(?:type|escribe)\s*["']?([!#]?[a-zA-Z0-9_\-]+)""", re.I)
+]
+
+def scan_channel_for_giveaway(ch_slug, session):
+    try:
+        cache = radar_state["channel_cache"].get(ch_slug, {})
+        now = time.time()
+        if not cache or (now - cache.get("last_checked", 0) > 40):
+            r = session.get(f"https://kick.com/api/v2/channels/{ch_slug}", timeout_seconds=6)
+            if r.status_code == 200:
+                d = r.json()
+                is_live = d.get("livestream") is not None
+                ch_id = d.get("id")
+                room_id = d.get("chatroom", {}).get("id")
+                cache = {"id": ch_id, "chatroom_id": room_id, "is_live": is_live, "last_checked": now}
+                radar_state["channel_cache"][ch_slug] = cache
+            else:
+                return
+
+        if not cache.get("is_live") or not cache.get("id"):
+            return
+
+        ch_id = cache["id"]
+        mr = session.get(f"https://kick.com/api/v2/channels/{ch_id}/messages", timeout_seconds=6)
+        if mr.status_code != 200:
+            return
+        msgs = mr.json().get("data", {}).get("messages", [])
+
+        for m in reversed(msgs):
+            mid = m.get("id")
+            if mid in radar_state["processed_msg_ids"]:
+                continue
+            radar_state["processed_msg_ids"].add(mid)
+            if len(radar_state["processed_msg_ids"]) > 500:
+                first = next(iter(radar_state["processed_msg_ids"]))
+                radar_state["processed_msg_ids"].remove(first)
+
+            sender = (m.get("sender", {}).get("username") or "").lower()
+            content = m.get("content") or ""
+            is_botrix = "botrix" in sender or sender == "bot_rix"
+            is_streamer = sender == ch_slug.lower()
+
+            if is_botrix or is_streamer:
+                kw = None
+                for pat in GIVEAWAY_PATTERNS:
+                    m_kw = pat.search(content)
+                    if m_kw:
+                        kw = m_kw.group(1)
+                        break
+
+                if kw:
+                    evt = {
+                        "id": f"{ch_slug}_{mid}",
+                        "channel": ch_slug,
+                        "chatroom_id": cache.get("chatroom_id"),
+                        "channel_id": ch_id,
+                        "keyword": kw,
+                        "sender": sender,
+                        "content": content,
+                        "time": time.strftime("%H:%M:%S"),
+                        "timestamp": int(now)
+                    }
+                    radar_state["events"].insert(0, evt)
+                    radar_state["events"] = radar_state["events"][:30]
+                    print(f"[RADAR] 🎁 GIVEAWAY DETECTED on #{ch_slug}! KW={kw} from @{sender}")
+
+                    if radar_state.get("auto_enter") and cache.get("chatroom_id"):
+                        try:
+                            if os.path.exists(TOKENS_FILE):
+                                with open(TOKENS_FILE, "r", encoding="utf-8") as f:
+                                    tks = [line.strip() for line in f if line.strip()]
+                                if tks:
+                                    print(f"[RADAR] Auto-entering on #{ch_slug} with {len(tks)} tokens for '{kw}'...")
+                                    threading.Thread(
+                                        target=auto_enter_giveaway,
+                                        args=(cache["chatroom_id"], ch_slug, kw, tks),
+                                        daemon=True
+                                    ).start()
+                        except Exception as e:
+                            print(f"[RADAR] Auto-enter error: {e}")
+    except Exception:
+        pass
+
+def auto_enter_giveaway(chatroom_id, channel, keyword, tokens):
+    content = format_kick_message(keyword, channel)
+    for i, token in enumerate(tokens):
+        bare = token.strip()
+        if ":" in bare: bare = bare.split(":")[-1]
+        if "|" in bare: bare = bare.split("|")[-1]
+        s = make_session(token=bare, channel=channel)
+        s.headers["content-type"] = "application/json"
+        try:
+            s.post(f"https://kick.com/api/v2/messages/send/{chatroom_id}",
+                   json={"content": content, "type": "message"}, timeout_seconds=8)
+        except Exception:
+            pass
+        time.sleep(0.35)
+
+def radar_background_loop():
+    session = make_session()
+    while True:
+        try:
+            if radar_state["enabled"]:
+                watchlist = list(radar_state["watchlist"])
+                for ch in watchlist:
+                    if not radar_state["enabled"]:
+                        break
+                    scan_channel_for_giveaway(ch, session)
+                    time.sleep(0.3)
+            time.sleep(2)
+        except Exception:
+            time.sleep(3)
+
+threading.Thread(target=radar_background_loop, daemon=True).start()
+
+@app.get("/api/radar/status")
+async def get_radar_status():
+    live_channels = [
+        {"slug": slug, "is_live": info.get("is_live", False)}
+        for slug, info in radar_state["channel_cache"].items()
+    ]
+    return {
+        "ok": True,
+        "enabled": radar_state["enabled"],
+        "auto_enter": radar_state["auto_enter"],
+        "watchlist": radar_state["watchlist"],
+        "live_channels": live_channels,
+        "events": radar_state["events"][:15]
+    }
+
+class RadarWatchlistRequest(BaseModel):
+    action: str  # "add", "remove", "set"
+    channel: Optional[str] = None
+    watchlist: Optional[List[str]] = None
+
+@app.post("/api/radar/watchlist")
+async def update_radar_watchlist(req: RadarWatchlistRequest):
+    if req.action == "add" and req.channel:
+        ch = req.channel.strip().lower().replace("#", "")
+        if ch and ch not in radar_state["watchlist"]:
+            radar_state["watchlist"].append(ch)
+            save_radar_state()
+    elif req.action == "remove" and req.channel:
+        ch = req.channel.strip().lower().replace("#", "")
+        if ch in radar_state["watchlist"]:
+            radar_state["watchlist"].remove(ch)
+            save_radar_state()
+    elif req.action == "set" and req.watchlist is not None:
+        radar_state["watchlist"] = [c.strip().lower().replace("#", "") for c in req.watchlist if c.strip()]
+        save_radar_state()
+    return {"ok": True, "watchlist": radar_state["watchlist"]}
+
+class RadarToggleRequest(BaseModel):
+    enabled: Optional[bool] = None
+    auto_enter: Optional[bool] = None
+
+@app.post("/api/radar/toggle")
+async def toggle_radar(req: RadarToggleRequest):
+    if req.enabled is not None:
+        radar_state["enabled"] = req.enabled
+    if req.auto_enter is not None:
+        radar_state["auto_enter"] = req.auto_enter
+    save_radar_state()
+    return {"ok": True, "enabled": radar_state["enabled"], "auto_enter": radar_state["auto_enter"]}
+
 # ── TOKEN FILE ROUTES ─────────────────────────────────────────────────────────
 
 @app.get("/api/tokens/load")

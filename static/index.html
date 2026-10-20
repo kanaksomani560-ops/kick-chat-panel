@@ -1056,7 +1056,9 @@
     <div style="display:flex;align-items:center;gap:10px;">
       <div class="giveaway-pulse-icon">🎁</div>
       <div>
-        <div style="font-size:10px;font-weight:800;color:#ff5733;letter-spacing:1px;text-transform:uppercase;">BOTRIX GIVEAWAY DETECTED!</div>
+        <div style="font-size:10px;font-weight:800;color:#ff5733;letter-spacing:1px;text-transform:uppercase;">
+          GIVEAWAY DETECTED ON <span id="bannerChannel" style="color:#00a8ff;text-decoration:underline;">#STREAMER</span>!
+        </div>
         <div style="font-size:13px;font-weight:900;color:#fff;margin-top:2px;">
           Keyword: <span style="color:#00ff88;font-family:var(--mono);background:rgba(0,255,136,0.15);padding:2px 8px;border-radius:6px;" id="bannerKeyword">!ticket</span>
           <span style="font-size:10px;color:var(--muted);margin-left:6px;" id="bannerSender">from @botrix</span>
@@ -1064,7 +1066,7 @@
       </div>
     </div>
     <div style="display:flex;align-items:center;gap:8px;">
-      <button class="btn btn-green" onclick="enterGiveawayWithKeyword(lastGiveawayKeyword)" style="font-size:11px;padding:8px 14px;font-weight:800;box-shadow:0 0 15px rgba(0,255,136,0.4);">⚡ ENTER ALL ACCOUNTS</button>
+      <button class="btn btn-green" id="bannerEnterBtn" onclick="enterDetectedGiveaway()" style="font-size:11px;padding:8px 14px;font-weight:800;box-shadow:0 0 15px rgba(0,255,136,0.4);">⚡ ENTER ALL ACCOUNTS</button>
       <button class="btn btn-dark" onclick="dismissGiveawayAlert()" style="padding:8px 10px;font-size:11px;min-width:32px;">✕</button>
     </div>
   </div>
@@ -1138,24 +1140,39 @@
       </div>
     </div>
 
-    <!-- 🎁 BOTRIX & STREAMER GIVEAWAY RADAR -->
+    <!-- 🎁 BOTRIX GIVEAWAY RADAR (EVERYWHERE SCANNER) -->
     <div class="section" style="background:#0d1116;border-left:2px solid #10b981;">
       <div style="display:flex;align-items:center;justify-content:space-between;">
-        <div class="section-title" style="color:#10b981;margin-bottom:0;">🎁 BotRix Giveaway Radar</div>
+        <div class="section-title" style="color:#10b981;margin-bottom:0;">🎁 BotRix Radar (Scan Everywhere)</div>
         <span class="radar-status-dot active" id="radarStatusDot" title="Radar Active"></span>
       </div>
-      <div style="font-size:10px;color:var(--muted);margin-top:4px;">Auto-detects BotRix & Streamer giveaway keywords in real-time with sound alarm & push alerts.</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:4px;">No channel connection needed! Auto-scans all top Kick streams 24/7 for giveaways with sound siren & push alerts.</div>
 
       <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px;">
         <label style="display:flex;align-items:center;gap:8px;font-size:11px;color:#fff;cursor:pointer;">
           <input type="checkbox" id="giveawayRadarToggle" checked onchange="toggleGiveawayRadar(this.checked)" style="width:15px;height:15px;cursor:pointer;" />
-          <b>Enable Radar (Sound Alert + Banner + Vibration)</b>
+          <b>Enable Global Radar (Sound Siren + Mobile Vibration)</b>
         </label>
         
         <label style="display:flex;align-items:center;gap:8px;font-size:11px;color:#ffb199;cursor:pointer;">
           <input type="checkbox" id="autoEnterGiveawayToggle" onchange="toggleAutoEnter(this.checked)" style="width:15px;height:15px;cursor:pointer;" />
-          <b>⚡ Auto-Enter with All Live Accounts (Instant)</b>
+          <b>⚡ Auto-Enter Everywhere (Instant with All Accounts)</b>
         </label>
+      </div>
+
+      <!-- Watched Streamers Chips & Add Streamer -->
+      <div style="margin-top:10px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <span style="font-size:9.5px;color:var(--muted);letter-spacing:0.8px;font-weight:700;">WATCHED STREAMS:</span>
+          <span style="font-size:9.5px;color:#10b981;font-weight:700;" id="radarLiveCount">Scanning...</span>
+        </div>
+        <div id="radarStreamersChips" style="display:flex;flex-wrap:wrap;gap:4px;max-height:85px;overflow-y:auto;padding-bottom:2px;">
+          <!-- Populated dynamically with chips -->
+        </div>
+        <div style="display:flex;gap:6px;margin-top:8px;">
+          <input type="text" id="newRadarStreamerInput" placeholder="Add streamer (e.g. adinross)..." style="flex:1;padding:6px 10px;font-size:11px;border-radius:10px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.05);color:#fff;" onkeypress="if(event.key==='Enter')addStreamerToRadar()"/>
+          <button class="btn btn-green" onclick="addStreamerToRadar()" style="padding:6px 12px;font-size:10px;min-height:30px;border-radius:10px;font-weight:700;">+ ADD</button>
+        </div>
       </div>
 
       <div style="display:flex;gap:6px;margin-top:10px;">
@@ -1165,15 +1182,18 @@
 
       <div id="radarLastDetectedBox" style="margin-top:10px;padding:8px 10px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.25);border-radius:10px;display:none;">
         <div style="display:flex;justify-content:space-between;align-items:center;">
-          <span style="font-size:9.5px;color:var(--muted);letter-spacing:0.5px;">LAST DETECTED KEYWORD:</span>
+          <span style="font-size:9.5px;color:var(--muted);letter-spacing:0.5px;">LAST DETECTED GIVEAWAY:</span>
           <span style="font-size:9px;color:#10b981;font-weight:700;" id="radarDetectedTime">Just now</span>
         </div>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">
-          <span style="font-size:14px;font-weight:900;color:#00ff88;font-family:var(--mono);" id="radarKeywordText">!ticket</span>
-          <button class="btn btn-green" onclick="enterGiveawayWithKeyword(lastGiveawayKeyword)" style="font-size:10px;padding:5px 10px;font-weight:800;">⚡ ENTER NOW</button>
+          <div>
+            <span style="font-size:12px;font-weight:700;color:#00a8ff;" id="radarChannelText">#channel</span>:
+            <span style="font-size:13px;font-weight:900;color:#00ff88;font-family:var(--mono);" id="radarKeywordText">!ticket</span>
+          </div>
+          <button class="btn btn-green" id="radarEnterBtn" onclick="enterDetectedGiveaway()" style="font-size:10px;padding:5px 10px;font-weight:800;">⚡ ENTER NOW</button>
         </div>
       </div>
-      <div class="sline" id="radarStatusText" style="margin-top:6px;font-size:10px;color:var(--muted);">Radar standby — connect a channel to start sniffing</div>
+      <div class="sline" id="radarStatusText" style="margin-top:6px;font-size:10px;color:var(--muted);">🟢 Global Radar Active — Watching streams for giveaways</div>
     </div>
 
     <div class="accounts-wrap">
@@ -1592,6 +1612,236 @@ function switchMobileTab(tab) {
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
+
+
+// ── MULTI-STREAM GLOBAL GIVEAWAY RADAR ──────────────────────────────────────
+let globalRadarActive = true;
+let globalAutoEnter = false;
+let latestGiveawayEvent = null;
+let processedGiveawayIds = new Set();
+let globalRadarTimer = null;
+
+async function syncRadarStatus() {
+  try {
+    const r = await fetch(`${API}/api/radar/status`);
+    const d = await r.json();
+    if (!d.ok) return;
+
+    const liveCountEl = document.getElementById('radarLiveCount');
+    const liveStreams = (d.live_channels || []).filter(c => c.is_live);
+    if (liveCountEl) {
+      liveCountEl.textContent = `${liveStreams.length} Live / ${d.watchlist.length} Total`;
+    }
+
+    renderRadarChips(d.watchlist, d.live_channels || []);
+
+    if (d.events && d.events.length > 0) {
+      const latest = d.events[0];
+      if (!processedGiveawayIds.has(latest.id)) {
+        processedGiveawayIds.add(latest.id);
+        triggerGlobalGiveawayAlert(latest);
+      }
+    }
+  } catch (e) {}
+}
+
+function renderRadarChips(watchlist, liveChannels) {
+  const container = document.getElementById('radarStreamersChips');
+  if (!container) return;
+  const liveMap = new Map();
+  liveChannels.forEach(c => liveMap.set(c.slug, c.is_live));
+
+  let html = '';
+  watchlist.forEach(ch => {
+    const isLive = liveMap.get(ch) === true;
+    html += `
+      <span style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:12px;background:${isLive ? 'rgba(16,185,129,0.18)' : 'rgba(255,255,255,0.04)'};border:1px solid ${isLive ? 'rgba(16,185,129,0.4)' : 'rgba(255,255,255,0.08)'};font-size:10px;font-family:var(--mono);color:${isLive ? '#fff' : 'var(--muted)'};">
+        <span style="width:6px;height:6px;border-radius:50%;background:${isLive ? '#10b981' : '#555'};${isLive ? 'box-shadow:0 0 6px #10b981;' : ''}"></span>
+        @${escapeHtml(ch)}
+        <span onclick="removeStreamerFromRadar('${escapeHtml(ch)}')" style="cursor:pointer;color:#ff5733;font-weight:bold;margin-left:2px;" title="Remove">×</span>
+      </span>
+    `;
+  });
+  container.innerHTML = html;
+}
+
+async function addStreamerToRadar() {
+  const input = document.getElementById('newRadarStreamerInput');
+  const val = (input ? input.value : '').trim().toLowerCase().replace('#', '');
+  if (!val) return;
+  try {
+    const r = await fetch(`${API}/api/radar/watchlist`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'add', channel: val })
+    });
+    const d = await r.json();
+    if (d.ok) {
+      input.value = '';
+      syncRadarStatus();
+    }
+  } catch (e) {}
+}
+
+async function removeStreamerFromRadar(ch) {
+  try {
+    const r = await fetch(`${API}/api/radar/watchlist`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'remove', channel: ch })
+    });
+    const d = await r.json();
+    if (d.ok) syncRadarStatus();
+  } catch (e) {}
+}
+
+function triggerGlobalGiveawayAlert(evt) {
+  latestGiveawayEvent = evt;
+  playGiveawaySound();
+  if (navigator.vibrate) navigator.vibrate([300, 150, 300, 150, 600]);
+
+  if (window.Notification && Notification.permission === 'granted') {
+    new Notification(`🎁 GIVEAWAY on #${evt.channel}!`, {
+      body: `Keyword: ${evt.keyword} (from @${evt.sender})`
+    });
+  }
+
+  showGlobalGiveawayBanner(evt);
+  addBotLog(`🎁 GLOBAL GIVEAWAY DETECTED on #${evt.channel}! Keyword: "${evt.keyword}" from @${evt.sender}`, 'success');
+}
+
+function showGlobalGiveawayBanner(evt) {
+  const banner = document.getElementById('giveawayAlertBanner');
+  const chEl = document.getElementById('bannerChannel');
+  const kwEl = document.getElementById('bannerKeyword');
+  const senderEl = document.getElementById('bannerSender');
+  if (chEl) chEl.textContent = `#${evt.channel}`;
+  if (kwEl) kwEl.textContent = evt.keyword;
+  if (senderEl) senderEl.textContent = `from @${evt.sender}`;
+  if (banner) banner.style.display = 'block';
+
+  const box = document.getElementById('radarLastDetectedBox');
+  const rCh = document.getElementById('radarChannelText');
+  const rKw = document.getElementById('radarKeywordText');
+  const rTime = document.getElementById('radarDetectedTime');
+  if (rCh) rCh.textContent = `#${evt.channel}`;
+  if (rKw) rKw.textContent = evt.keyword;
+  if (rTime) rTime.textContent = evt.time || 'Just now';
+  if (box) box.style.display = 'block';
+}
+
+function dismissGiveawayAlert() {
+  const banner = document.getElementById('giveawayAlertBanner');
+  if (banner) banner.style.display = 'none';
+}
+
+async function enterDetectedGiveaway() {
+  if (!latestGiveawayEvent || !latestGiveawayEvent.keyword) {
+    alert('No giveaway event detected yet.');
+    return;
+  }
+  const evt = latestGiveawayEvent;
+  const liveAccounts = accounts.filter(a => a.valid || a.username);
+  if (!liveAccounts.length) {
+    alert('No live accounts loaded in Accounts & Bot.');
+    return;
+  }
+  const tokens = liveAccounts.map(a => a.token);
+  addBotLog(`⚡ Submitting giveaway entry "${evt.keyword}" on #${evt.channel} with ${tokens.length} accounts...`, 'info');
+
+  try {
+    const r = await fetch(`${API}/api/multi_send`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chatroom_id: evt.chatroom_id,
+        channel: evt.channel,
+        words: [evt.keyword],
+        tokens: tokens,
+        delay_ms: 350
+      })
+    });
+    const d = await r.json();
+    if (d.ok) {
+      addBotLog(`🎉 Entered giveaway on #${evt.channel} with ${d.sent}/${tokens.length} accounts!`, 'success');
+      dismissGiveawayAlert();
+    } else {
+      addBotLog(`Entry failed: ${d.error}`, 'error');
+    }
+  } catch (e) {
+    addBotLog(`Entry error: ${e.message}`, 'error');
+  }
+}
+
+async function toggleGiveawayRadar(active) {
+  globalRadarActive = active;
+  const dot = document.getElementById('radarStatusDot');
+  if (dot) dot.classList.toggle('active', active);
+  try {
+    await fetch(`${API}/api/radar/toggle`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ enabled: active })
+    });
+  } catch (e) {}
+}
+
+async function toggleAutoEnter(val) {
+  globalAutoEnter = val;
+  try {
+    await fetch(`${API}/api/radar/toggle`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ auto_enter: val })
+    });
+    if (val) addBotLog('⚡ Auto-Enter Everywhere ENABLED: Bot will automatically enter any stream when BotRix rolls!', 'info');
+  } catch (e) {}
+}
+
+function testGiveawayAlarm() {
+  playGiveawaySound();
+  if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+  showGlobalGiveawayBanner({
+    channel: 'roshtein',
+    keyword: '!ticket',
+    sender: 'botrix',
+    time: new Date().toLocaleTimeString()
+  });
+}
+
+function requestNotificationPerm() {
+  if (!('Notification' in window)) {
+    alert('This browser does not support desktop notifications.');
+    return;
+  }
+  Notification.requestPermission().then(permission => {
+    if (permission === 'granted') {
+      new Notification('🔔 Notifications Enabled!', { body: 'You will receive instant alerts when BotRix triggers a giveaway on ANY stream!' });
+    }
+  });
+}
+
+function playGiveawaySound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const now = ctx.currentTime;
+    [523.25, 659.25, 783.99, 1046.5].forEach((freq, idx) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freq, now + idx * 0.12);
+      gain.gain.setValueAtTime(0.35, now + idx * 0.12);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.12 + 0.28);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now + idx * 0.12);
+      osc.stop(now + idx * 0.12 + 0.3);
+    });
+  } catch (e) {}
+}
+
+setInterval(syncRadarStatus, 2500);
+setTimeout(syncRadarStatus, 600);
 
 const API = '';
 let chatroomId = null, userId = null, channelName = '', accounts = [], selectedAccount = null, wordBank = [], selectedWords = [], templates = [], isSending = false;
