@@ -3565,6 +3565,18 @@ async function checkFollowStatus() {
       const notFollowingCount = liveAccounts.filter(a => a.following !== true).length;
       st.textContent = `✔ ${followingCount} Following / ${notFollowingCount} Not Following (#${target})`;
       st.className = 'sline ok';
+      
+      // Auto-switch selected account if it does not follow
+      if (selectedAccount && selectedAccount.following === false) {
+        const follower = accounts.find(a => (a.valid || a.username) && a.following === true);
+        if (follower) {
+          selectedAccount = follower;
+          addBotLog(`Switched active account to @${follower.username} (follows #${target})`, 'info');
+        } else {
+          selectedAccount = null;
+        }
+        updateActiveAccountDisplay();
+      }
       renderAccounts();
     } else {
       st.textContent = `❌ Error: ${d.error || 'Check failed'}`;
@@ -3709,6 +3721,36 @@ function toggleStream() {
   updateChatFrame();
 }
 
+
+// ── STRICT CHANNEL FOLLOWER FILTER ───────────────────────────────────────────
+function getChannelFollowerAccounts(candidateAccounts = null) {
+  const pool = candidateAccounts || accounts.filter(a => a.valid || a.username);
+  if (!pool.length) return [];
+
+  // Filter accounts confirmed to be following the streamer
+  const verifiedFollowers = pool.filter(a => a.following === true);
+  if (verifiedFollowers.length > 0) {
+    return verifiedFollowers;
+  }
+
+  // If follow checks were conducted and all checked accounts are not following
+  const checkedAny = pool.some(a => a.following !== undefined);
+  if (checkedAny) {
+    return []; // 0 followers confirmed
+  }
+
+  // Fallback before any follow check has run: exclude any explicitly marked false
+  return pool.filter(a => a.following !== false);
+}
+
+function isAccountFollowingChannel(account) {
+  if (!account) return false;
+  if (account.following === false) return false;
+  const anyFollower = accounts.some(a => (a.valid || a.username) && a.following === true);
+  if (anyFollower && account.following !== true) return false;
+  return true;
+}
+
 // ── SINGLE MESSAGE ───────────────────────────────────────────────────────────────
 async function sendMessage() {
   const msgInput = document.getElementById('messageInput');
@@ -3735,15 +3777,29 @@ async function sendMessage() {
     return;
   }
 
+  const followerAccounts = getChannelFollowerAccounts(liveAccounts);
+
   if (autoRandom) {
+    if (!followerAccounts.length) {
+      alert(`⚠️ None of your accounts are following #${channelName}! Non-following accounts cannot chat. Please use "FOLLOW NON-FOLLOWERS" in the Accounts tab first.`);
+      return;
+    }
     if (typeof window._rrIndex === 'undefined') window._rrIndex = 0;
-    const picked = liveAccounts[window._rrIndex % liveAccounts.length];
+    const picked = followerAccounts[window._rrIndex % followerAccounts.length];
     window._rrIndex++;
     selectedAccount = picked;
     updateActiveAccountDisplay();
-  } else if (!selectedAccount) {
-    alert('Select an account first from the list or check Auto-cycle');
-    return;
+  } else {
+    if (!selectedAccount) {
+      alert('Select an account first from the list or check Auto-cycle');
+      return;
+    }
+    if (!isAccountFollowingChannel(selectedAccount)) {
+      alert(`⚠️ Account @${selectedAccount.username} is NOT following #${channelName}!
+
+Per streamer rules, non-following accounts cannot be used. Please follow first or switch to an account that follows.`);
+      return;
+    }
   }
 
   const st = document.getElementById('sendStatus');
@@ -3935,9 +3991,11 @@ async function sendAll(customPool = null) {
     return;
   }
   let live = accounts.filter(a => a.valid && (selectedTokenIndices.size === 0 || selectedTokenIndices.has(a.index)));
+  live = getChannelFollowerAccounts(live);
   if (!live.length) {
-    document.getElementById('multiStatus').textContent = '✗ No valid accounts selected';
+    document.getElementById('multiStatus').textContent = `✗ No accounts are following #${channelName}`;
     document.getElementById('multiStatus').className = 'sline err';
+    alert(`⚠️ None of the selected accounts are following #${channelName}! Non-following accounts cannot be used.`);
     return;
   }
   
@@ -4749,12 +4807,22 @@ function updateActiveAccountDisplay() {
   const dotEl = document.querySelector('.active-account-dot');
   
   if (isAuto || !selectedAccount) {
-    if (nameEl) nameEl.textContent = 'Auto-cycle (Round-robin)';
+    const followers = accounts.filter(a => (a.valid || a.username) && a.following === true);
+    const countInfo = followers.length > 0 ? ` (${followers.length} followers)` : '';
+    if (nameEl) nameEl.textContent = `Auto-cycle${countInfo}`;
     if (dotEl) { dotEl.style.background = '#00ff88'; dotEl.style.boxShadow = '0 0 10px #00ff88'; }
   } else {
     const uName = selectedAccount.username || 'Selected Account';
-    if (nameEl) nameEl.textContent = `@${uName}`;
-    if (dotEl) { dotEl.style.background = '#00a8ff'; dotEl.style.boxShadow = '0 0 10px #00a8ff'; }
+    const isFol = selectedAccount.following === true;
+    const isNotFol = selectedAccount.following === false;
+    let folTag = '';
+    if (isFol) folTag = ' (✓ Follower)';
+    else if (isNotFol) folTag = ' (⚠️ Not Following)';
+    if (nameEl) nameEl.textContent = `@${uName}${folTag}`;
+    if (dotEl) {
+      dotEl.style.background = isFol ? '#10b981' : (isNotFol ? '#ef4444' : '#00a8ff');
+      dotEl.style.boxShadow = isFol ? '0 0 10px #10b981' : (isNotFol ? '0 0 10px #ef4444' : '0 0 10px #00a8ff');
+    }
   }
   renderQuickAccountChips();
 }
@@ -5901,23 +5969,32 @@ async function fireEmoteDirectly(emote, element) {
     return;
   }
 
+  const eligibleAccounts = getChannelFollowerAccounts(liveAccounts);
+  if (!eligibleAccounts.length) {
+    const st = document.getElementById('sendStatus');
+    if (st) {
+      st.textContent = `⚠️ Cannot send: No accounts are following #${channelName}!`;
+      st.className = 'sline err';
+    }
+    alert(`⚠️ Cannot send emotes: None of your accounts are following #${channelName}! Please follow the streamer first.`);
+    return;
+  }
+
   let targetAccount = null;
   if (autoRandom || !selectedAccount) {
     const isRapidBurst = (
       window._emoteBurstAccount &&
       (now - window._lastEmoteTapTime) < BURST_TIMEOUT_MS &&
       window._emoteBurstCount < MAX_BURST_PER_ACCOUNT &&
-      liveAccounts.some(a => a.index === window._emoteBurstAccount.index)
+      eligibleAccounts.some(a => a.index === window._emoteBurstAccount.index)
     );
 
     if (isRapidBurst) {
-      // User tapped fast (2-3 times instant) -> SEND FROM SAME ACCOUNT!
       targetAccount = window._emoteBurstAccount;
       window._emoteBurstCount++;
     } else {
-      // First tap of a new burst or paused > 1.5s -> Rotate to next account!
       if (typeof window._tapRrIndex === 'undefined') window._tapRrIndex = 0;
-      targetAccount = liveAccounts[window._tapRrIndex % liveAccounts.length];
+      targetAccount = eligibleAccounts[window._tapRrIndex % eligibleAccounts.length];
       window._tapRrIndex++;
       window._emoteBurstAccount = targetAccount;
       window._emoteBurstCount = 1;
@@ -5927,6 +6004,10 @@ async function fireEmoteDirectly(emote, element) {
     selectedAccount = targetAccount;
     updateActiveAccountDisplay();
   } else {
+    if (!isAccountFollowingChannel(selectedAccount)) {
+      alert(`⚠️ Account @${selectedAccount.username} is NOT following #${channelName}! Please follow before sending emotes.`);
+      return;
+    }
     targetAccount = selectedAccount;
     window._emoteBurstAccount = targetAccount;
     window._lastEmoteTapTime = now;
@@ -6125,11 +6206,20 @@ async function fireEmoteFromAccount(accIndex, element) {
       alert('No valid accounts loaded');
       return;
     }
+    const eligibleAccounts = getChannelFollowerAccounts(liveAccounts);
+    if (!eligibleAccounts.length) {
+      alert(`⚠️ None of your accounts are following #${channelName}! Follow first.`);
+      return;
+    }
     if (typeof window._tapRrIndex === 'undefined') window._tapRrIndex = 0;
-    targetAccount = liveAccounts[window._tapRrIndex % liveAccounts.length];
+    targetAccount = eligibleAccounts[window._tapRrIndex % eligibleAccounts.length];
     window._tapRrIndex++;
   } else {
     targetAccount = accounts.find(a => a.index === accIndex);
+    if (targetAccount && !isAccountFollowingChannel(targetAccount)) {
+      alert(`⚠️ Account @${targetAccount.username} is NOT following #${channelName}! Cannot send emotes.`);
+      return;
+    }
   }
   
   if (!targetAccount) return;
@@ -6231,11 +6321,14 @@ function renderQuickAccountChips() {
   live.forEach(a => {
     const isSel = (!isAuto && selectedAccount && selectedAccount.index === a.index);
     const tapCount = accountTapCounts[a.index] || 0;
+    const isFol = a.following === true;
+    const isNotFol = a.following === false;
     html += `
       <button class="quick-acc-chip ${tapEmoteMode ? 'tap-mode-chip' : (isSel ? 'selected' : '')}" 
               onclick="${tapEmoteMode ? `fireEmoteFromAccount(${a.index}, this)` : `pickChatAccountByIndex(${a.index})`}"
-              title="${tapEmoteMode ? `Tap to send "${activeTapEmote}" from @${a.username}` : `Select @${a.username}`}">
-        ${tapEmoteMode ? '⚡ ' : ''}@${a.username}
+              style="${isNotFol ? 'opacity:0.45;border-color:rgba(239,68,68,0.3);' : (isFol ? 'border-color:rgba(16,185,129,0.35);' : '')}"
+              title="${isNotFol ? `⚠️ Not following #${channelName} (Disabled)` : (tapEmoteMode ? `Tap to send "${activeTapEmote}" from @${a.username}` : `Select @${a.username}`)}">
+        ${tapEmoteMode ? '⚡ ' : ''}@${a.username}${isNotFol ? ' ⚠️' : ''}
         ${tapEmoteMode && tapCount ? `<span class="chip-tap-badge">x${tapCount}</span>` : ''}
       </button>
     `;
@@ -6306,14 +6399,21 @@ function renderAccountPickerModal(filter = '') {
       const isSel = (!isAuto && selectedAccount && selectedAccount.index === a.index);
       const initial = (a.username || 'A')[0].toUpperCase();
       const tapCount = accountTapCounts[a.index] || 0;
+      const isFol = a.following === true;
+      const isNotFol = a.following === false;
+      const folBadge = isFol 
+        ? `<span style="font-size:8px;padding:2px 5px;border-radius:4px;background:rgba(16,185,129,0.15);color:#10b981;font-weight:800;border:1px solid rgba(16,185,129,0.3);margin-left:6px;">✓ Following</span>`
+        : (isNotFol ? `<span style="font-size:8px;padding:2px 5px;border-radius:4px;background:rgba(239,68,68,0.15);color:#ef4444;font-weight:800;border:1px solid rgba(239,68,68,0.3);margin-left:6px;">⚠️ Not Following</span>` : '');
+
       html += `
         <div class="account-picker-item ${tapEmoteMode ? 'tap-mode-chip' : (isSel ? 'active' : '')}" 
+             style="${isNotFol ? 'opacity:0.55;border-color:rgba(239,68,68,0.25);' : (isFol ? 'border-color:rgba(16,185,129,0.25);' : '')}"
              onclick="${tapEmoteMode ? `fireEmoteFromAccount(${a.index}, this)` : `pickChatAccountByIndex(${a.index})`}">
           <div style="display:flex;align-items:center;gap:12px;">
-            <div class="acc-avatar" style="${tapEmoteMode ? 'background:linear-gradient(135deg, #ff416c, #ff4b2b);' : ''}">${tapEmoteMode ? '⚡' : initial}</div>
+            <div class="acc-avatar" style="${tapEmoteMode ? 'background:linear-gradient(135deg, #ff416c, #ff4b2b);' : (isNotFol ? 'border:1px solid #ef4444;' : '')}">${tapEmoteMode ? '⚡' : initial}</div>
             <div>
-              <div style="font-weight:700;font-size:13px;color:#fff;">@${a.username}</div>
-              <div style="font-size:10px;color:var(--muted);">${tapEmoteMode ? `Taps: ${tapCount} sent` : `Account #${a.index}`}</div>
+              <div style="font-weight:700;font-size:13px;color:#fff;display:flex;align-items:center;">@${a.username}${folBadge}</div>
+              <div style="font-size:10px;color:var(--muted);">${tapEmoteMode ? `Taps: ${tapCount} sent` : (isNotFol ? '<span style="color:#ef4444;">⚠️ Cannot chat until followed</span>' : `Account #${a.index}`)}</div>
             </div>
           </div>
           <span style="font-size:10px;padding:4px 10px;border-radius:8px;background:${tapEmoteMode ? (tapCount ? 'rgba(255,75,43,0.3);color:#ff5733;' : 'rgba(255,255,255,0.06);color:#ffb199;') : (isSel ? 'rgba(0,168,255,0.15);color:var(--accent);' : 'rgba(255,255,255,0.06);color:var(--muted);')}font-weight:700;">
@@ -6493,10 +6593,14 @@ async function triggerMoodBlast(moodId, element) {
     setTimeout(() => { if (floater && floater.parentNode) floater.parentNode.removeChild(floater); }, 650);
   }
 
-  // Blast up to 5 accounts (or all live accounts if fewer)
-  const burstCount = Math.min(liveAccounts.length, 5);
-  // Shuffle accounts & messages so each account sends a different hype/sad phrase!
-  const shuffledAccs = [...liveAccounts].sort(() => Math.random() - 0.5).slice(0, burstCount);
+  const eligibleAccounts = getChannelFollowerAccounts(liveAccounts);
+  if (!eligibleAccounts.length) {
+    alert(`⚠️ None of your accounts are following #${channelName}! Please follow the streamer before blasting mood messages.`);
+    return;
+  }
+  // Blast up to 5 accounts (followers only)
+  const burstCount = Math.min(eligibleAccounts.length, 5);
+  const shuffledAccs = [...eligibleAccounts].sort(() => Math.random() - 0.5).slice(0, burstCount);
   const shuffledMsgs = [...mood.messages].sort(() => Math.random() - 0.5);
 
   const st = document.getElementById('sendStatus');
@@ -6595,11 +6699,13 @@ async function startMoodContinuousSpam(moodId) {
       return;
     }
     const currentLive = accounts.filter(a => a.valid || a.username);
-    if (!currentLive.length) {
+    const eligible = getChannelFollowerAccounts(currentLive);
+    if (!eligible.length) {
       stopMoodContinuousSpam();
+      alert(`⚠️ Mood auto-spam stopped: No accounts are following #${channelName}!`);
       return;
     }
-    const acc = currentLive[rrIdx % currentLive.length];
+    const acc = eligible[rrIdx % eligible.length];
     rrIdx++;
     const randomMsg = mood.messages[Math.floor(Math.random() * mood.messages.length)];
 
