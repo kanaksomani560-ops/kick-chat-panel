@@ -995,9 +995,81 @@
     text-align: center;
     font-family: var(--mono);
   }
+
+  /* ── GIVEAWAY RADAR STYLES ── */
+  .giveaway-banner {
+    position: fixed;
+    top: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(100% - 30px);
+    max-width: 650px;
+    background: linear-gradient(135deg, rgba(20, 26, 36, 0.98), rgba(12, 14, 18, 0.98));
+    border: 2px solid #00ff88;
+    border-radius: 18px;
+    box-shadow: 0 15px 40px rgba(0, 255, 136, 0.35), 0 0 30px rgba(0, 0, 0, 0.8);
+    z-index: 999999;
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    animation: bannerSlideDown 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  @keyframes bannerSlideDown {
+    from { opacity: 0; transform: translate(-50%, -30px) scale(0.95); }
+    to { opacity: 1; transform: translate(-50%, 0) scale(1); }
+  }
+  .giveaway-banner-content {
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .giveaway-pulse-icon {
+    font-size: 24px;
+    animation: pulseRotate 1s infinite alternate;
+  }
+  @keyframes pulseRotate {
+    0% { transform: scale(1) rotate(-5deg); }
+    100% { transform: scale(1.25) rotate(5deg); }
+  }
+  .radar-status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #666;
+    display: inline-block;
+  }
+  .radar-status-dot.active {
+    background: #00ff88;
+    box-shadow: 0 0 8px #00ff88;
+    animation: pulse 1.5s infinite;
+  }
+
 </style>
 </head>
 <body>
+
+<!-- FLOATING GIVEAWAY ALERT BANNER -->
+<div id="giveawayAlertBanner" class="giveaway-banner" style="display:none;">
+  <div class="giveaway-banner-content">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div class="giveaway-pulse-icon">🎁</div>
+      <div>
+        <div style="font-size:10px;font-weight:800;color:#ff5733;letter-spacing:1px;text-transform:uppercase;">BOTRIX GIVEAWAY DETECTED!</div>
+        <div style="font-size:13px;font-weight:900;color:#fff;margin-top:2px;">
+          Keyword: <span style="color:#00ff88;font-family:var(--mono);background:rgba(0,255,136,0.15);padding:2px 8px;border-radius:6px;" id="bannerKeyword">!ticket</span>
+          <span style="font-size:10px;color:var(--muted);margin-left:6px;" id="bannerSender">from @botrix</span>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <button class="btn btn-green" onclick="enterGiveawayWithKeyword(lastGiveawayKeyword)" style="font-size:11px;padding:8px 14px;font-weight:800;box-shadow:0 0 15px rgba(0,255,136,0.4);">⚡ ENTER ALL ACCOUNTS</button>
+      <button class="btn btn-dark" onclick="dismissGiveawayAlert()" style="padding:8px 10px;font-size:11px;min-width:32px;">✕</button>
+    </div>
+  </div>
+</div>
+
 
 <header>
   <div class="dot"></div>
@@ -1064,6 +1136,44 @@
         </div>
         <div class="sline" id="followStatus"></div>
       </div>
+    </div>
+
+    <!-- 🎁 BOTRIX & STREAMER GIVEAWAY RADAR -->
+    <div class="section" style="background:#0d1116;border-left:2px solid #10b981;">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div class="section-title" style="color:#10b981;margin-bottom:0;">🎁 BotRix Giveaway Radar</div>
+        <span class="radar-status-dot active" id="radarStatusDot" title="Radar Active"></span>
+      </div>
+      <div style="font-size:10px;color:var(--muted);margin-top:4px;">Auto-detects BotRix & Streamer giveaway keywords in real-time with sound alarm & push alerts.</div>
+
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px;">
+        <label style="display:flex;align-items:center;gap:8px;font-size:11px;color:#fff;cursor:pointer;">
+          <input type="checkbox" id="giveawayRadarToggle" checked onchange="toggleGiveawayRadar(this.checked)" style="width:15px;height:15px;cursor:pointer;" />
+          <b>Enable Radar (Sound Alert + Banner + Vibration)</b>
+        </label>
+        
+        <label style="display:flex;align-items:center;gap:8px;font-size:11px;color:#ffb199;cursor:pointer;">
+          <input type="checkbox" id="autoEnterGiveawayToggle" onchange="toggleAutoEnter(this.checked)" style="width:15px;height:15px;cursor:pointer;" />
+          <b>⚡ Auto-Enter with All Live Accounts (Instant)</b>
+        </label>
+      </div>
+
+      <div style="display:flex;gap:6px;margin-top:10px;">
+        <button class="btn btn-dark" onclick="testGiveawayAlarm()" style="flex:1;font-size:9.5px;padding:6px 4px;">🔊 Test Sound</button>
+        <button class="btn btn-dark" onclick="requestNotificationPerm()" style="flex:1;font-size:9.5px;padding:6px 4px;">🔔 Enable Push Noti</button>
+      </div>
+
+      <div id="radarLastDetectedBox" style="margin-top:10px;padding:8px 10px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.25);border-radius:10px;display:none;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:9.5px;color:var(--muted);letter-spacing:0.5px;">LAST DETECTED KEYWORD:</span>
+          <span style="font-size:9px;color:#10b981;font-weight:700;" id="radarDetectedTime">Just now</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">
+          <span style="font-size:14px;font-weight:900;color:#00ff88;font-family:var(--mono);" id="radarKeywordText">!ticket</span>
+          <button class="btn btn-green" onclick="enterGiveawayWithKeyword(lastGiveawayKeyword)" style="font-size:10px;padding:5px 10px;font-weight:800;">⚡ ENTER NOW</button>
+        </div>
+      </div>
+      <div class="sline" id="radarStatusText" style="margin-top:6px;font-size:10px;color:var(--muted);">Radar standby — connect a channel to start sniffing</div>
     </div>
 
     <div class="accounts-wrap">
@@ -1897,6 +2007,7 @@ async function connectChannel(override) {
       const fTarget = document.getElementById('followTargetInput');
       if (fTarget) fTarget.value = channelName;
       setTimeout(() => { if (typeof checkFollowStatus === 'function') checkFollowStatus(); }, 600);
+      if (data.channel_id) startGiveawayRadar(data.channel_id);
     } else {
       if (st) { st.textContent = `✗ ${data.error}`; st.className = 'sline err'; }
       addBotLog(`Connect failed: ${data.error}`, 'error');

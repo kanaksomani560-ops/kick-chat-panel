@@ -211,7 +211,7 @@ async def connect_channel(req: ConnectRequest):
         r = make_session(channel=channel).get(f"https://kick.com/api/v2/channels/{channel}", timeout_seconds=10)
         if r.status_code == 200:
             data = r.json()
-            return {"ok": True, "chatroom_id": data["chatroom"]["id"], "user_id": data["id"], "channel": channel}
+            return {"ok": True, "chatroom_id": data["chatroom"]["id"], "user_id": data["id"], "channel_id": data["id"], "channel": channel}
         r = make_session(channel=channel).get(f"https://kick.com/api/v2/channels/{channel}/chatroom", timeout_seconds=10)
         if r.status_code == 200:
             return {"ok": True, "chatroom_id": r.json()["id"], "user_id": None, "channel": channel}
@@ -219,6 +219,20 @@ async def connect_channel(req: ConnectRequest):
     except Exception as e:
         return {"ok": False, "error": str(e)}
 
+
+
+@app.get("/api/chat/messages/{channel_id}")
+async def get_channel_messages(channel_id: int):
+    try:
+        session = make_session()
+        r = session.get(f"https://kick.com/api/v2/channels/{channel_id}/messages", timeout_seconds=8)
+        if r.status_code == 200:
+            data = r.json()
+            messages = data.get("data", {}).get("messages", [])
+            return {"ok": True, "messages": messages}
+        return {"ok": False, "error": f"HTTP {r.status_code}", "messages": []}
+    except Exception as e:
+        return {"ok": False, "error": str(e), "messages": []}
 
 @app.post("/api/check_token")
 async def check_token(req: CheckTokenRequest):
