@@ -1142,11 +1142,26 @@
       </div>
     </div>
 
-    <!-- 🎰 [SLOTS & CASINO] STREAM TITLE RADAR -->
-    <div class="section" style="background:#0d1116;border-left:2px solid #10b981;">
+    <!-- COMPACT RADAR PILL (WHEN HIDDEN) -->
+    <div id="radarHiddenPill" class="section" style="display:none;background:#0d1116;border-left:2px solid #10b981;padding:8px 12px;margin-bottom:12px;cursor:pointer;border-radius:14px;" onclick="toggleRadarVisibility(true)">
       <div style="display:flex;align-items:center;justify-content:space-between;">
-        <div class="section-title" style="color:#10b981;margin-bottom:0;">🎰 [Slots & Casino] Title Radar</div>
-        <span class="radar-status-dot active" id="radarStatusDot" title="Radar Active"></span>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span style="font-size:13px;">🎰</span>
+          <span style="font-size:11px;font-weight:700;color:#10b981;">[Slots & Casino] Title Radar</span>
+          <span id="radarHiddenCount" style="font-size:9.5px;color:var(--muted);">(Hidden)</span>
+        </div>
+        <button class="btn btn-green" style="font-size:9.5px;padding:3px 10px;min-height:22px;border-radius:6px;font-weight:700;">👁️ Show Radar</button>
+      </div>
+    </div>
+
+    <!-- 🎰 [SLOTS & CASINO] STREAM TITLE RADAR -->
+    <div id="radarSectionCard" class="section" style="background:#0d1116;border-left:2px solid #10b981;">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="section-title" style="color:#10b981;margin-bottom:0;">🎰 [Slots & Casino] Title Radar</div>
+          <span class="radar-status-dot active" id="radarStatusDot" title="Radar Active"></span>
+        </div>
+        <button class="btn btn-dark" id="hideRadarBtn" onclick="toggleRadarVisibility(false)" style="font-size:9.5px;padding:3px 9px;min-height:22px;border-radius:6px;color:var(--muted);" title="Hide radar section">👁️ Hide</button>
       </div>
       <div style="font-size:10px;color:var(--muted);margin-top:4px;">Monitors all live Slots & Casino streams 24/7. Triggers audio chime, phone vibration & push notifications when any streamer runs a <b>Bonus Hunt</b>, <b>Hunt</b>, <b>Tournament / Tourney</b>, or <b>Bonus Buy Battle</b>!</div>
 
@@ -1648,6 +1663,7 @@ async function syncRadarStatus() {
     if (!d.ok) return;
 
     const liveCountEl = document.getElementById('radarLiveCount');
+    const hiddenCountEl = document.getElementById('radarHiddenCount');
     const autoDiscoverToggle = document.getElementById('autoDiscoverSlotsToggle');
     const radarToggle = document.getElementById('giveawayRadarToggle');
     const statusText = document.getElementById('radarStatusText');
@@ -1666,6 +1682,13 @@ async function syncRadarStatus() {
 
     const liveStreams = d.live_channels || [];
     const matchedCount = d.matched_count || 0;
+    if (hiddenCountEl) {
+      if (d.matched_count > 0) {
+        hiddenCountEl.textContent = `(🎯 ${d.matched_count} Hunts Active · ${liveStreams.length} Live)`;
+      } else {
+        hiddenCountEl.textContent = `(🟢 ${liveStreams.length} Live)`;
+      }
+    }
     if (liveCountEl) {
       if (matchedCount > 0) {
         liveCountEl.textContent = `🎯 ${matchedCount} Active | 🟢 ${liveStreams.length} Live Casino Streams`;
@@ -2036,6 +2059,22 @@ function playGiveawaySound() {
 
 setInterval(syncRadarStatus, 2500);
 setTimeout(syncRadarStatus, 600);
+
+const RADAR_STORAGE_KEY = 'showRadarSection';
+
+function toggleRadarVisibility(show) {
+  const card = document.getElementById('radarSectionCard');
+  const pill = document.getElementById('radarHiddenPill');
+  if (card) card.style.display = show ? 'block' : 'none';
+  if (pill) pill.style.display = show ? 'none' : 'block';
+  localStorage.setItem(RADAR_STORAGE_KEY, show ? '1' : '0');
+}
+
+function loadRadarVisibility() {
+  const stored = localStorage.getItem(RADAR_STORAGE_KEY);
+  const show = stored === null ? true : stored === '1';
+  toggleRadarVisibility(show);
+}
 
 const API = '';
 let chatroomId = null, userId = null, channelName = '', accounts = [], selectedAccount = null, wordBank = [], selectedWords = [], templates = [], isSending = false;
@@ -2990,6 +3029,7 @@ window.onload = () => {
   loadWordBank();
   loadUserPresets();
   loadAIKeys();
+  loadRadarVisibility();
   loadFollowBotDisplay();
   loadAccountGroups();
   loadTokenCache();
